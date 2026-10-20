@@ -134,8 +134,78 @@ function renderDetail(){const n=byId(focus)||byId(root);const hue=colorOf(n);con
  const sub=children(n.id);if(sub.length){const s=document.createElement('section');s.className='detail-section';const sh=document.createElement('div');sh.className='section-heading';const dot=document.createElement('span');dot.className='section-mark';sh.append(dot,document.createTextNode(`하위 개념 · ${sub.length}개`));s.append(sh);const chips2=document.createElement('div');chips2.className='chip-list';sub.forEach(item=>{const chip=document.createElement('button');chip.className='chip';chip.textContent=item.title+' ↗';chip.onclick=()=>navigate(item.id);chips2.append(chip)});s.append(chips2);scroll.append(s)}
  scroll.scrollTop=0;
 }
-function navigate(id){if(!byId(id))return;if(focus===id){openPanel();return}if(transitioning)return;transitioning=true;const view=el('viewport');view.classList.add('out');setTimeout(()=>{focus=id;renderMap();renderDetail();view.classList.remove('out');view.classList.remove('in');void view.offsetWidth;view.classList.add('in');transitioning=false;},150)}
+function navigate(id){if(!byId(id))return;if(focus===id){openPanel();return}if(transitioning)return;transitioning=true;const view=el('viewport');view.classList.add('out');setTimeout(()=>{focus=id;resetMapCamera();renderMap();renderDetail();view.classList.remove('out');view.classList.remove('in');void view.offsetWidth;view.classList.add('in');transitioning=false;},150)}
 function redraw(){if(!transitioning)renderMap()}
+
+// Map-only zoom / pan. Transform a separate camera wrapper so navigation animation stays intact.
+const mapCamera={scale:1,x:0,y:0},MAP_ZOOM_MIN=.45,MAP_ZOOM_MAX=3.2;
+let mapPointer=null;
+function applyMapCamera(){
+ const camera=el('mapCamera');
+ camera.style.transform=`translate3d(${mapCamera.x}px,${mapCamera.y}px,0) scale(${mapCamera.scale})`;
+ el('zoomLevel').textContent=Math.round(mapCamera.scale*100)+'%';
+}
+function zoomMapAt(factor,clientX,clientY){
+ const a=el('mapArea').getBoundingClientRect();
+ const target=Math.max(MAP_ZOOM_MIN,Math.min(MAP_ZOOM_MAX,mapCamera.scale*factor));
+ if(target===mapCamera.scale)return;
+ // Screen point = viewport center + translation + scale * local coordinate.
+ // Preserve the point under the pointer while adjusting the camera scale.
+ const ratio=target/mapCamera.scale;
+ const px=clientX-a.left-a.width/2,py=clientY-a.top-a.height/2;
+ mapCamera.x=px-ratio*(px-mapCamera.x);
+ mapCamera.y=py-ratio*(py-mapCamera.y);
+ mapCamera.scale=target;
+ applyMapCamera();
+}
+function resetMapCamera(){
+ mapCamera.scale=1;mapCamera.x=0;mapCamera.y=0;
+ applyMapCamera();
+}
+function initMapCamera(){
+ const area=el('mapArea');
+ area.addEventListener('wheel',e=>{
+  if(!e.ctrlKey)return;
+  e.preventDefault();
+  if(transitioning)return;
+  const normalized=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?area.clientHeight:1);
+  const amount=Math.max(-260,Math.min(260,normalized));
+  zoomMapAt(Math.exp(-amount*.004),e.clientX,e.clientY);
+ },{passive:false});
+ el('zoomInBtn').addEventListener('click',()=>{
+  const r=area.getBoundingClientRect();zoomMapAt(1.25,r.left+r.width/2,r.top+r.height/2);
+ });
+ el('zoomOutBtn').addEventListener('click',()=>{
+  const r=area.getBoundingClientRect();zoomMapAt(.8,r.left+r.width/2,r.top+r.height/2);
+ });
+ el('zoomResetBtn').addEventListener('click',resetMapCamera);
+ area.addEventListener('pointerdown',e=>{
+  if(transitioning||mapPointer!==null||e.button!==0||e.target.closest('button,a,input,textarea,select,.map-label,.map-controls,.map-hint,.legend'))return;
+  mapPointer={id:e.pointerId,x:e.clientX,y:e.clientY};
+  area.setPointerCapture(e.pointerId);
+  area.classList.add('is-panning');
+  e.preventDefault();
+ });
+ area.addEventListener('pointermove',e=>{
+  if(!mapPointer||mapPointer.id!==e.pointerId)return;
+  mapCamera.x+=e.clientX-mapPointer.x;
+  mapCamera.y+=e.clientY-mapPointer.y;
+  mapPointer.x=e.clientX;mapPointer.y=e.clientY;
+  applyMapCamera();
+ });
+ function stopPan(e){
+  if(!mapPointer||mapPointer.id!==e.pointerId)return;
+  mapPointer=null;area.classList.remove('is-panning');
+  if(area.hasPointerCapture(e.pointerId))area.releasePointerCapture(e.pointerId);
+ }
+ area.addEventListener('pointerup',stopPan);
+ area.addEventListener('pointercancel',stopPan);
+ area.addEventListener('lostpointercapture',e=>{
+  if(mapPointer?.id===e.pointerId){mapPointer=null;area.classList.remove('is-panning')}
+ });
+ applyMapCamera();
+}
+
 function openPanel(){if(window.innerWidth<=830){panelOpen=true;el('detail').classList.add('mobile-open')}}
 function closeModal(){el('modal').classList.add('hidden');el('modal').replaceChildren();modalMode=''}
 function showModal(){el('modal').classList.remove('hidden')}
@@ -281,5 +351,5 @@ function openCloud(){
 }
 
 let toastTimer;function toast(msg){const t=el('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600)}
-function init(){load();if(!localStorage.getItem(CLOUD_OWNER)&&localStorage.getItem(CLOUD_DIRTY)!=='1'&&cloudLocalLooksEdited()){localStorage.setItem(CLOUD_DIRTY,'1')}cloudDirty=localStorage.getItem(CLOUD_DIRTY)==='1';el('cloudBtn').onclick=openCloud;el('homeBtn').onclick=()=>navigate(root);el('searchBtn').onclick=()=>openSearch();el('dataBtn').onclick=openData;el('topAddBtn').onclick=()=>openEditor('add');el('childAddBtn').onclick=()=>openEditor('add');el('mobilePanelBtn').onclick=()=>{panelOpen=!panelOpen;el('detail').classList.toggle('mobile-open',panelOpen)};el('modal').addEventListener('click',e=>{if(e.target===el('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!el('modal').classList.contains('hidden'))closeModal();else if(panelOpen){panelOpen=false;el('detail').classList.remove('mobile-open')}else if(byId(focus)?.parent)navigate(byId(focus).parent)}if(e.key==='/'&&!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement)&&el('modal').classList.contains('hidden')){e.preventDefault();openSearch()}});let r;const observer=new ResizeObserver(()=>{clearTimeout(r);r=setTimeout(redraw,80)});observer.observe(el('mapArea'));renderMap();renderDetail();cloudInit();document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudRefresh()});window.addEventListener('online',()=>cloudRefresh());setInterval(()=>{if(!document.hidden)cloudRefresh()},30000)};init();
+function init(){load();initMapCamera();if(!localStorage.getItem(CLOUD_OWNER)&&localStorage.getItem(CLOUD_DIRTY)!=='1'&&cloudLocalLooksEdited()){localStorage.setItem(CLOUD_DIRTY,'1')}cloudDirty=localStorage.getItem(CLOUD_DIRTY)==='1';el('cloudBtn').onclick=openCloud;el('homeBtn').onclick=()=>navigate(root);el('searchBtn').onclick=()=>openSearch();el('dataBtn').onclick=openData;el('topAddBtn').onclick=()=>openEditor('add');el('childAddBtn').onclick=()=>openEditor('add');el('mobilePanelBtn').onclick=()=>{panelOpen=!panelOpen;el('detail').classList.toggle('mobile-open',panelOpen)};el('modal').addEventListener('click',e=>{if(e.target===el('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!el('modal').classList.contains('hidden'))closeModal();else if(panelOpen){panelOpen=false;el('detail').classList.remove('mobile-open')}else if(byId(focus)?.parent)navigate(byId(focus).parent)}if(e.key==='/'&&!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement)&&el('modal').classList.contains('hidden')){e.preventDefault();openSearch()}});let r;const observer=new ResizeObserver(()=>{clearTimeout(r);r=setTimeout(redraw,80)});observer.observe(el('mapArea'));renderMap();renderDetail();cloudInit();document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudRefresh()});window.addEventListener('online',()=>cloudRefresh());setInterval(()=>{if(!document.hidden)cloudRefresh()},30000)};init();
 })();
