@@ -203,3 +203,127 @@ body,.app{background:#07090e;color:#edf5fc}
 .footer-hint{color:#91a8b9}
 @media(max-width:830px){.mobile-detail-toggle{background:#2b678c;color:#fff;border:1px solid #6eacd1}}
 @media(prefers-reduced-motion:reduce){.mind-node,.mind-node .node-ring{transition:none!important}}
+
+/* High-contrast learning cards, 2026-10-20
+   Intentionally override legacy planet styles without altering the study panel. */
+.map-area{
+  background:#070b12!important;
+}
+.map-area::before{
+  background-image:radial-gradient(circle,rgba(114,155,181,.25) .6px,transparent 1px)!important;
+  background-size:28px 28px!important;
+  opacity:.16!important;
+}
+.mind-node.node,
+.mind-node.node.child,
+.mind-node.node.focus{
+  box-sizing:border-box;
+  width:204px;
+  height:116px;
+  border:0;
+  border-radius:16px;
+  padding:14px 18px 12px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  text-align:left;
+  color:#17283a;
+  cursor:pointer!important;
+  filter:none;
+  background:transparent;
+  transition:scale .16s ease,filter .16s ease!important;
+}
+.mind-node.node.focus{width:228px;height:130px}
+.mind-node.node .node-ring,
+.mind-node.node.child .node-ring,
+.mind-node.node.focus .node-ring{
+  position:absolute;
+  inset:0;
+  border-radius:16px!important;
+  overflow:hidden;
+  background:#e3edf5!important;
+  border:1px solid #b9cedd!important;
+  box-shadow:0 2px 0 rgba(236,247,255,.35) inset,0 14px 31px rgba(0,0,0,.48)!important;
+}
+.mind-node.node .node-ring::before{
+  content:"";
+  display:block;
+  position:absolute;
+  inset:0 0 auto;
+  height:5px;
+  border:0;
+  border-radius:0!important;
+  background:color-mix(in srgb,var(--hue) 72%,#276fa2);
+  opacity:.94;
+}
+.mind-node.node .node-ring::after{content:none!important;display:none!important}
+.mind-node.node .glyph,
+.mind-node.node.focus .glyph{
+  display:grid;
+  place-items:center;
+  width:27px;
+  height:27px;
+  flex-shrink:0;
+  margin:0 0 7px;
+  border-radius:8px;
+  background:#caddea;
+  color:#264257!important;
+  font-size:17px!important;
+  line-height:1;
+  text-shadow:none!important;
+  filter:none!important;
+}
+.mind-node.node .node-name,
+.mind-node.node.focus .node-name{
+  display:block;
+  max-width:100%;
+  margin:0;
+  color:#122436!important;
+  font-size:14px!important;
+  line-height:1.25;
+  font-weight:800;
+  letter-spacing:-.025em;
+  text-align:left;
+  text-shadow:none!important;
+  overflow-wrap:anywhere;
+  word-break:keep-all;
+}
+.mind-node.node.focus .node-name{font-size:16px!important}
+.mind-node.node .node-meta,
+.mind-node.node.focus .node-meta{
+  display:block!important;
+  max-width:100%;
+  margin:5px 0 0;
+  color:#4e667b!important;
+  font-size:10px!important;
+  font-weight:700;
+  opacity:1!important;
+  text-align:left;
+  letter-spacing:0;
+}
+.mind-node.node.selected .node-ring,
+.mind-node.node.selected.focus .node-ring{
+  background:#d1e9fa!important;
+  border:2px solid #187cba!important;
+  box-shadow:0 0 0 3px #070b12,0 0 0 6px #53abe0,0 15px 33px rgba(0,0,0,.55)!important;
+}
+.mind-node.node.selected .node-name{color:#0b3150!important}
+.mind-node.node.expanded:not(.selected) .node-ring{
+  border:2px solid #7293a9!important;
+  background:#edf3f7!important;
+}
+.mind-node.node:hover{scale:1.045!important;filter:none!important;z-index:6}
+.mind-node.node:hover .node-ring{
+  border-color:#3c8db7!important;
+  box-shadow:0 0 0 3px rgba(80,167,219,.18),0 16px 34px rgba(0,0,0,.5)!important;
+}
+.mind-node.node:active{scale:.99!important}
+.mind-node.node:focus-visible{outline:3px solid #8cd8ff;outline-offset:5px;border-radius:16px}
+.concept-branch{stroke-width:2.6;opacity:.9;filter:none}
+.concept-crosslink{stroke:#9eb4c6;opacity:.53;stroke-width:1.7;filter:none}
+@media(max-width:520px){
+  .mind-node.node.child{width:204px;height:116px}
+  .mind-node.node.focus{width:228px;height:130px}
+}
+@media(prefers-reduced-motion:reduce){.mind-node.node{transition:none!important}}
