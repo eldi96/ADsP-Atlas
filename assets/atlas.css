@@ -408,3 +408,89 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 @media(prefers-reduced-motion:reduce){
   .top-action,.icon-btn,.chip,.soft-btn,.mind-node.node,.full-add,.detail{transition:none!important}
 }
+
+/* Learning cards + resizable reading panel · higher text contrast */
+@media(min-width:831px){
+ .workspace{
+   grid-template-columns:minmax(0,1fr) 12px var(--detail-width,35%)!important;
+ }
+ .panel-resizer{
+   position:relative;
+   z-index:21;
+   display:flex;
+   align-items:center;
+   justify-content:center;
+   cursor:col-resize;
+   touch-action:none;
+   background:#343439;
+   border-left:1px solid #525259;
+   border-right:1px solid #525259;
+   outline:none;
+   transition:background .16s ease;
+ }
+ .panel-resizer::before{
+   content:"";
+   position:absolute;
+   left:-7px;right:-7px;top:0;bottom:0;
+ }
+ .panel-resizer:hover,.panel-resizer:focus-visible,
+ .resizing-study-panel .panel-resizer{background:#63636b}
+ .resize-grip{
+   pointer-events:none;
+   width:3px;height:48px;border-radius:5px;
+   background:#b7b7bf;opacity:.86
+ }
+ .resizing-study-panel,.resizing-study-panel *{cursor:col-resize!important;user-select:none!important}
+}
+@media(max-width:830px){.panel-resizer{display:none}}
+/* Node card: label first, more breathing room, no decorative glyph. */
+.mind-node.node,.mind-node.node.child,.mind-node.node.focus{
+ width:230px!important;
+ height:112px!important;
+ padding:19px 21px!important;
+ border-radius:12px!important;
+ justify-content:center!important;
+}
+.mind-node.node.focus{width:246px!important;height:124px!important}
+.mind-node.node .glyph{display:none!important}
+.mind-node.node .node-name,.mind-node.node.focus .node-name{
+ font-size:18px!important;
+ font-weight:760!important;
+ line-height:1.36!important;
+ max-width:100%!important;
+ letter-spacing:-.025em;
+ color:#17191e!important;
+}
+.mind-node.node.focus .node-name{font-size:20px!important}
+.mind-node.node .node-meta,.mind-node.node.focus .node-meta{
+ font-size:12px!important;
+ line-height:1.35;
+ margin-top:9px!important;
+ color:#47505c!important;
+}
+.mind-node.node .node-ring,.mind-node.node.child .node-ring,
+.mind-node.node.focus .node-ring{
+ background:#e8e9ec!important;
+ border:1px solid #f4f4f6!important;
+ box-shadow:0 5px 17px rgba(0,0,0,.18)!important;
+ border-radius:12px!important
+}
+.mind-node.node.expanded:not(.selected) .node-ring{background:#f1f1f3!important}
+.mind-node.node.selected .node-ring{background:#fff!important;border:2px solid #fff!important;box-shadow:0 0 0 4px #9c9ca6,0 8px 22px rgba(0,0,0,.24)!important}
+.mind-node.node .node-ring::before{background:#878892!important;width:3px}
+.mind-node.node .node-ring::after{display:none!important}
+.map-area{background:#222327!important}
+.map-area::before{opacity:.20!important}
+.concept-branch{stroke-width:2.5;opacity:.93}
+.detail{background:#303034!important;border-left:0}
+.detail-header{background:#303034!important}
+.detail-scroll{background:#303034}
+.detail-intro{background:#3b3b40;color:#fafafd;border-color:#65656e}
+.section-copy{color:#ededf0}
+.section-title{color:#fafafd}
+.detail-section{border-bottom-color:#57575e}
+.memory-card{background:#414147;color:#fff}
+@media(max-width:520px){
+ .mind-node.node.child{width:230px!important;height:112px!important}
+ .mind-node.node.focus{width:246px!important;height:124px!important}
+}
