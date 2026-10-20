@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const COLORS={root:'#78d7ff',a:'#57dbc3',b:'#f4ad78',c:'#ae9bff',cyan:'#78d7ff',rose:'#ff9eaf',yellow:'#f8dc8e',blue:'#83adff'};
+const COLORS={root:'#92a3b6',a:'#879da6',b:'#9b95a8',c:'#8795ab',cyan:'#8b9dac',rose:'#a4919b',yellow:'#acaa92',blue:'#8299ac'};
 const defaultNodes=[];const defaultLinks=[];let number=0;
 function add(parent,title,icon,short,detail='',example='',exam='',memory='',priority='★★★',color=''){
  const p=defaultNodes.find(n=>n.id===parent);const id='n'+(++number);defaultNodes.push({id,parent,title,icon,short,detail,example,exam,memory,priority,color:color||(p?p.color:'root'),builtIn:true});return id;
@@ -121,30 +121,66 @@ function makeSVG(tag,attrs,container){const e=document.createElementNS('http://w
 // Large shared workspace: clicking a concept grows its subtree rather than changing pages.
 const expandedConcepts=new Set([root]);
 let mapPositions=new Map();
+
 function measureMindmap(){
  const area=el('mapArea');
+ const cx=area.clientWidth/2,cy=area.clientHeight/2;
  const positions=new Map();
- let row=0;
- const visiting=new Set();
- function walk(n,depth){
-  if(visiting.has(n.id))return;
-  visiting.add(n.id);
-  const kids=expandedConcepts.has(n.id)?children(n.id).filter(k=>!visiting.has(k.id)):[];
-  for(const child of kids)walk(child,depth+1);
-  const rendered=kids.filter(k=>positions.has(k.id));
-  const y=rendered.length?rendered.reduce((sum,k)=>sum+positions.get(k.id).rawY,0)/rendered.length:row++*290;
-  positions.set(n.id,{rawY:y,depth:depth,x:0,y:0});
-  visiting.delete(n.id);
+ const childrenByParent=new Map();
+ for(const n of nodes){
+  if(n.parent==null)continue;
+  if(!childrenByParent.has(n.parent))childrenByParent.set(n.parent,[]);
+  childrenByParent.get(n.parent).push(n);
+ }
+ const leafWeights=new Map();
+ const measuring=new Set();
+ function weight(id){
+  if(leafWeights.has(id))return leafWeights.get(id);
+  if(measuring.has(id))return 1;
+  measuring.add(id);
+  const kids=childrenByParent.get(id)||[];
+  const value=kids.length?kids.reduce((total,k)=>total+weight(k.id),0):1;
+  measuring.delete(id);
+  leafWeights.set(id,Math.max(1,value));
+  return Math.max(1,value);
+ }
+ // Use ALL descendants for stable sectors: opening a branch does not rearrange siblings.
+ weight(root);
+ const ring=[0,620,1350,2300,3500,4950,6650,8550];
+ function radius(depth){return ring[depth]??(ring[ring.length-1]+(depth-ring.length+1)*2100)}
+ const visible=new Set();
+ function put(n,depth,angle,start,end){
+  if(visible.has(n.id))return;
+  visible.add(n.id);
+  positions.set(n.id,{
+   x:cx+Math.cos(angle)*radius(depth),
+   y:cy+Math.sin(angle)*radius(depth),
+   depth,angle
+  });
+  if(!expandedConcepts.has(n.id))return;
+  const kids=childrenByParent.get(n.id)||[];
+  if(!kids.length)return;
+  const sum=kids.reduce((total,k)=>total+weight(k.id),0);
+  let cursor=start;
+  for(const kid of kids){
+   const span=(end-start)*weight(kid.id)/sum;
+   const mid=cursor+span/2;
+   put(kid,depth+1,mid,cursor,cursor+span);
+   cursor+=span;
+  }
  }
  const main=byId(root);
  if(!main)return positions;
- walk(main,0);
- const rootY=positions.get(root).rawY;
- const startX=Math.max(175,Math.min(260,area.clientWidth*.24));
- for(const p of positions.values()){
-  p.x=startX+p.depth*510;
-  p.y=area.clientHeight*.52+(p.rawY-rootY);
- }
+ positions.set(root,{x:cx,y:cy,depth:0,angle:0});
+ visible.add(root);
+ const mainChildren=childrenByParent.get(root)||[];
+ // Divide the full 360 degrees evenly between the major subjects.
+ const sector=2*Math.PI/Math.max(1,mainChildren.length);
+ const first=-Math.PI/2-sector/2;
+ mainChildren.forEach((kid,i)=>{
+  const start=first+i*sector;
+  put(kid,1,start+sector/2,start,start+sector);
+ });
  return positions;
 }
 function makeMindmapNode(n,p){
@@ -175,10 +211,27 @@ function makeMindmapNode(n,p){
  btn.addEventListener('click',()=>toggleConcept(n.id));
  el('nodes').append(btn);
 }
+
 function drawLink(from,to,edgeLayer,extra=false,color=null){
- const curvature=Math.max(90,(to.x-from.x)*.46);
- const d='M '+from.x+' '+from.y+' C '+(from.x+curvature)+' '+from.y+', '+(to.x-curvature)+' '+to.y+', '+to.x+' '+to.y;
- makeSVG('path',{d:d,class:extra?'concept-crosslink':'concept-branch',stroke:color||'#7ebfda',fill:'none'},edgeLayer);
+ const cx=el('mapArea').clientWidth/2,cy=el('mapArea').clientHeight/2;
+ const dx=to.x-from.x,dy=to.y-from.y,dist=Math.hypot(dx,dy)||1;
+ let d;
+ if(extra){
+  const ox=-dy/dist*Math.min(180,dist*.22);
+  const oy=dx/dist*Math.min(180,dist*.22);
+  d='M '+from.x+' '+from.y+' Q '+((from.x+to.x)/2+ox)+' '+((from.y+to.y)/2+oy)+' '+to.x+' '+to.y;
+ }else{
+  const fdx=from.x-cx,fdy=from.y-cy,tdx=to.x-cx,tdy=to.y-cy;
+  const fl=Math.hypot(fdx,fdy),tl=Math.hypot(tdx,tdy);
+  const ux=fl?fdx/fl:dx/dist,uy=fl?fdy/fl:dy/dist;
+  const vx=tl?tdx/tl:dx/dist,vy=tl?tdy/tl:dy/dist;
+  const bend=Math.min(410,dist*.34);
+  d='M '+from.x+' '+from.y+
+   ' C '+(from.x+ux*bend)+' '+(from.y+uy*bend)+
+   ', '+(to.x-vx*bend)+' '+(to.y-vy*bend)+
+   ', '+to.x+' '+to.y;
+ }
+ makeSVG('path',{d,class:extra?'concept-crosslink':'concept-branch',stroke:color||'#71808c',fill:'none'},edgeLayer);
 }
 function renderMap(){
  const area=el('mapArea');
@@ -204,9 +257,9 @@ function renderMap(){
   if(p)makeMindmapNode(n,p);
  }
  const selected=byId(focus)||byId(root);
- el('sectionEyebrow').textContent=selected.id===root?'THE BIG PICTURE':'EXPLORE THE UNIVERSE';
- el('mapTitle').textContent=selected.id===root?'세 과목, 하나의 지도':selected.title;
- el('mapDescription').textContent=selected.id===root?'행성을 눌러 개념의 가지를 펼쳐 보세요.':'한 화면에서 개념의 연결을 따라가세요.';
+ el('sectionEyebrow').textContent=selected.id===root?'KNOWLEDGE MAP':'CONCEPT NETWORK';
+ el('mapTitle').textContent=selected.id===root?'ADsP 개념 지도':selected.title;
+ el('mapDescription').textContent=selected.id===root?'세 과목의 개념을 사방으로 확장해 학습하세요.':'연결 관계를 한 화면에서 탐색하고 정리하세요.';
  el('crumb').replaceChildren();
  const path=ancestors(selected.id);
  path.forEach((part,i)=>{
