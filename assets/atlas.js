@@ -117,15 +117,127 @@ function course(node){let n=node,seen=0;while(n&&n.parent&&n.parent!==root&&seen
 function palette(node){return node?.color||'root'}
 function layout(count,w,h){const mobile=w<500;const compact=w<870;const cx=w/2,cy=h*(mobile?.53:.54);const availW=Math.max(140,w),availH=Math.max(200,h);const rx=Math.min(compact?Math.max(128,availW*.33):Math.max(245,availW*.315),compact?availW*.325:350);const ry=Math.min(compact?availH*.32:availH*.31,compact?255:290);let positions=[];const start=count===3?-Math.PI/2:count===2?-Math.PI/2:-(Math.PI/2)-(Math.PI*1.8/Math.max(count,3))/2;for(let i=0;i<count;i++){let angle=start+i*(2*Math.PI/count);if(count===1)angle=-Math.PI/2;positions.push({x:cx+Math.cos(angle)*rx,y:cy+Math.sin(angle)*ry,angle})}return {cx,cy,positions,rx,ry,mobile}}
 function makeSVG(tag,attrs,container){const e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);container.append(e);return e}
-function centerButton(n,x,y,kind,index=0){const btn=document.createElement('button');btn.type='button';btn.className='node '+kind;btn.style.left=x+'px';btn.style.top=y+'px';btn.style.setProperty('--hue',colorOf(n));btn.setAttribute('aria-label',kind==='focus'?`${n.title}, 현재 개념`:`${n.title}, 하위 개념 열기`);if(kind==='focus')btn.title='현재 위치 · 오른쪽에서 설명 확인';else btn.title=n.short||n.title;const glyph=document.createElement('div');glyph.className='glyph';glyph.textContent=n.icon||'✦';const name=document.createElement('div');name.className='node-name';name.textContent=n.title;const meta=document.createElement('div');meta.className='node-meta';meta.textContent=kind==='focus'?(n.id===root?'KNOWLEDGE MAP':`${children(n.id).length} TOPICS`):children(n.id).length?'열어보기 ↗':'개념 보기 ↗';btn.append(Object.assign(document.createElement('span'),{className:'node-ring'}),glyph,name,meta);if(kind==='focus')btn.addEventListener('click',()=>openPanel());else btn.addEventListener('click',()=>navigate(n.id));el('nodes').appendChild(btn)}
-function renderMap(){const n=byId(focus)||byId(root);const kids=children(n.id);const area=el('mapArea');const w=area.clientWidth,h=area.clientHeight;const {cx,cy,positions,rx,ry,mobile}=layout(kids.length+1,w,h);const orbits=el('orbits'),edges=el('edges'),layer=el('nodes');orbits.innerHTML='';edges.innerHTML='';layer.innerHTML='';orbits.setAttribute('viewBox',`0 0 ${w} ${h}`);edges.setAttribute('viewBox',`0 0 ${w} ${h}`);let orbitRadiusX=rx||200,orbitRadiusY=ry||180;makeSVG('ellipse',{cx,cy,rx:orbitRadiusX,ry:orbitRadiusY,class:'orbit-stroke dash'},orbits);makeSVG('ellipse',{cx,cy,rx:mobile?82:118,ry:mobile?82:118,class:'orbit-stroke'},orbits);makeSVG('ellipse',{cx,cy,rx:Math.min(orbitRadiusX*.63,200),ry:Math.min(orbitRadiusY*.63,160),class:'orbit-stroke'},orbits);for(let j=0;j<24;j++){const ang=j*2.39996+0.31;const radius=.5+(j%7)/11;makeSVG('circle',{cx:cx+Math.cos(ang)*rx*radius,cy:cy+Math.sin(ang)*ry*radius,r:j%5===0?'2':'1',class:'little-star'},orbits)}
- const visible=kids.slice();const plus={id:'__plus',title:'개념 추가',icon:'+',color:n.color,parent:n.id};visible.push(plus);
- visible.forEach((kid,i)=>{const p=positions[i];const x=p.x,y=p.y;const curvature=18*(i%2===0?1:-1);const d=`M ${cx} ${cy} C ${cx+(x-cx)*.3+curvature} ${cy+(y-cy)*.17-curvature}, ${cx+(x-cx)*.71-curvature} ${cy+(y-cy)*.83+curvature}, ${x} ${y}`;const hue=kid.id==='__plus'?'#667e9a':colorOf(kid);makeSVG('path',{d,class:'edge',stroke:hue,'stroke-dasharray':kid.id==='__plus'?'3 9':'none'},edges);if(kid.id!=='__plus')makeSVG('path',{d,class:'edge-trace'},edges);});
- const visibleMap=new Map(visible.map((kid,i)=>[kid.id,positions[i]]));links.forEach(l=>{const p1=visibleMap.get(l.a),p2=visibleMap.get(l.b);if(!p1||!p2)return;const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2;makeSVG('path',{d:`M ${p1.x} ${p1.y} Q ${mx+(cx-mx)*.27} ${my+(cy-my)*.27} ${p2.x} ${p2.y}`,stroke:'#f1c884','stroke-width':'1.2','stroke-dasharray':'4 7',opacity:'.5',fill:'none'},edges)});
- centerButton(n,cx,cy,'focus');visible.forEach((kid,i)=>{const p=positions[i];if(kid.id==='__plus'){const btn=document.createElement('button');btn.className='node child add-node';btn.style.left=p.x+'px';btn.style.top=p.y+'px';btn.style.setProperty('--hue','#93afc9');btn.innerHTML='<span class="node-ring"></span><span class="glyph">＋</span><span class="node-name">개념 추가</span>';btn.onclick=()=>openEditor('add',null);layer.appendChild(btn)}else centerButton(kid,p.x,p.y,'child',i)});
- const parent=byId(n.parent);el('sectionEyebrow').textContent=n.id===root?'THE BIG PICTURE':(course(n)?.title||'ADsP').toUpperCase();el('mapTitle').textContent=n.id===root?'세 과목, 하나의 지도':n.title;el('mapDescription').textContent=n.id===root?'행성을 누르면 그 안의 개념이 펼쳐집니다.':kids.length?`연결된 ${kids.length}개의 하위 개념을 탐색하세요.`:'이 개념에 내용을 더하거나 새로운 하위 개념을 연결해 보세요.';
- el('crumb').replaceChildren();const path=ancestors(n.id);path.forEach((part,i)=>{if(i){const sep=document.createElement('span');sep.className='sep';sep.textContent='›';el('crumb').append(sep)}const bt=document.createElement('button');bt.textContent=part.id===root?'전체':part.title;bt.className=i===path.length-1?'active':'';bt.onclick=()=>navigate(part.id);el('crumb').append(bt)});
+
+// Large shared workspace: clicking a concept grows its subtree rather than changing pages.
+const expandedConcepts=new Set([root]);
+let mapPositions=new Map();
+function measureMindmap(){
+ const area=el('mapArea');
+ const positions=new Map();
+ let row=0;
+ const visiting=new Set();
+ function walk(n,depth){
+  if(visiting.has(n.id))return;
+  visiting.add(n.id);
+  const kids=expandedConcepts.has(n.id)?children(n.id).filter(k=>!visiting.has(k.id)):[];
+  for(const child of kids)walk(child,depth+1);
+  const rendered=kids.filter(k=>positions.has(k.id));
+  const y=rendered.length?rendered.reduce((sum,k)=>sum+positions.get(k.id).rawY,0)/rendered.length:row++*290;
+  positions.set(n.id,{rawY:y,depth:depth,x:0,y:0});
+  visiting.delete(n.id);
+ }
+ const main=byId(root);
+ if(!main)return positions;
+ walk(main,0);
+ const rootY=positions.get(root).rawY;
+ const startX=Math.max(175,Math.min(260,area.clientWidth*.24));
+ for(const p of positions.values()){
+  p.x=startX+p.depth*510;
+  p.y=area.clientHeight*.52+(p.rawY-rootY);
+ }
+ return positions;
 }
+function makeMindmapNode(n,p){
+ const kidCount=children(n.id).length;
+ const selected=n.id===focus;
+ const open=expandedConcepts.has(n.id);
+ const btn=document.createElement('button');
+ btn.type='button';
+ btn.className='node '+(selected?'focus':'child')+' mind-node'+(selected?' selected':'')+(open?' expanded':'');
+ btn.style.left=p.x+'px';
+ btn.style.top=p.y+'px';
+ btn.style.setProperty('--hue',colorOf(n));
+ btn.setAttribute('aria-label',n.title+(kidCount?' · 하위 '+kidCount+'개 · '+(open?'접기':'펼치기'):' · 설명 보기'));
+ btn.setAttribute('aria-expanded',kidCount?String(open):'false');
+ btn.title=kidCount?(open?'클릭해서 가지 접기':'클릭해서 가지 펼치기'):'클릭해서 설명 보기';
+ const ring=document.createElement('span');
+ ring.className='node-ring';
+ const glyph=document.createElement('span');
+ glyph.className='glyph';
+ glyph.textContent=n.icon||'✦';
+ const title=document.createElement('span');
+ title.className='node-name';
+ title.textContent=n.title;
+ const meta=document.createElement('span');
+ meta.className='node-meta';
+ meta.textContent=kidCount?(open?'− 접기':'＋ '+kidCount+'개 펼치기'):'개념 보기';
+ btn.append(ring,glyph,title,meta);
+ btn.addEventListener('click',()=>toggleConcept(n.id));
+ el('nodes').append(btn);
+}
+function drawLink(from,to,edgeLayer,extra=false,color=null){
+ const curvature=Math.max(90,(to.x-from.x)*.46);
+ const d='M '+from.x+' '+from.y+' C '+(from.x+curvature)+' '+from.y+', '+(to.x-curvature)+' '+to.y+', '+to.x+' '+to.y;
+ makeSVG('path',{d:d,class:extra?'concept-crosslink':'concept-branch',stroke:color||'#7ebfda',fill:'none'},edgeLayer);
+}
+function renderMap(){
+ const area=el('mapArea');
+ const w=Math.max(10,area.clientWidth),h=Math.max(10,area.clientHeight);
+ const orbits=el('orbits'),edges=el('edges'),layer=el('nodes');
+ orbits.replaceChildren();edges.replaceChildren();layer.replaceChildren();
+ orbits.setAttribute('viewBox','0 0 '+w+' '+h);
+ edges.setAttribute('viewBox','0 0 '+w+' '+h);
+ mapPositions=measureMindmap();
+ const byPosition=mapPositions;
+ for(const n of nodes){
+  const p=byPosition.get(n.id);
+  if(!p||!n.parent)continue;
+  const parent=byPosition.get(n.parent);
+  if(parent)drawLink(parent,p,edges,false,colorOf(n));
+ }
+ for(const link of links){
+  const first=byPosition.get(link.a),second=byPosition.get(link.b);
+  if(first&&second)drawLink(first,second,edges,true);
+ }
+ for(const n of nodes){
+  const p=byPosition.get(n.id);
+  if(p)makeMindmapNode(n,p);
+ }
+ const selected=byId(focus)||byId(root);
+ el('sectionEyebrow').textContent=selected.id===root?'THE BIG PICTURE':'EXPLORE THE UNIVERSE';
+ el('mapTitle').textContent=selected.id===root?'세 과목, 하나의 지도':selected.title;
+ el('mapDescription').textContent=selected.id===root?'행성을 눌러 개념의 가지를 펼쳐 보세요.':'한 화면에서 개념의 연결을 따라가세요.';
+ el('crumb').replaceChildren();
+ const path=ancestors(selected.id);
+ path.forEach((part,i)=>{
+  if(i){const sep=document.createElement('span');sep.className='sep';sep.textContent='›';el('crumb').append(sep)}
+  const bt=document.createElement('button');
+  bt.textContent=part.id===root?'전체':part.title;
+  bt.className=i===path.length-1?'active':'';
+  bt.onclick=()=>navigate(part.id);
+  el('crumb').append(bt);
+ });
+}
+function toggleConcept(id){
+ const target=byId(id);
+ if(!target)return;
+ focus=id;
+ if(children(id).length){
+  if(expandedConcepts.has(id)&&id!==root)expandedConcepts.delete(id);
+  else expandedConcepts.add(id);
+ }
+ renderMap();
+ renderDetail();
+ fitMapToContent();
+}
+function expandAllMindmap(){
+ for(const n of nodes)if(children(n.id).length)expandedConcepts.add(n.id);
+ focus=root;
+ renderMap();
+ renderDetail();
+ fitMapToContent();
+}
+
 function makeSection(title,content,asMemory=false){if(!content)return null;const div=document.createElement('section');div.className='detail-section';const heading=document.createElement('div');heading.className='section-heading';const mark=document.createElement('span');mark.className='section-mark';heading.append(mark,document.createTextNode(title));div.append(heading);const p=document.createElement('div');p.className=asMemory?'memory-card':'section-copy';p.textContent=content;div.append(p);return div}
 function renderDetail(){const n=byId(focus)||byId(root);const hue=colorOf(n);const detail=el('detail');detail.style.setProperty('--detail-hue',hue);el('childAddBtn').style.background=hue;const head=el('detailHeader');head.replaceChildren();const top=document.createElement('div');top.className='panel-top';const label=document.createElement('div');label.className='chapter-label';label.textContent=n.id===root?'YOUR LEARNING GALAXY':(course(n)?.title||'LEARNING NOTE').toUpperCase();const controls=document.createElement('div');controls.className='panel-buttons';const edit=document.createElement('button');edit.className='icon-btn';edit.textContent='✎';edit.title='개념 수정';edit.setAttribute('aria-label','개념 수정');edit.onclick=()=>openEditor('edit',n.id);controls.append(edit);const parent=byId(n.parent);if(parent){const back=document.createElement('button');back.className='icon-btn';back.textContent='↶';back.title='상위 개념으로';back.onclick=()=>navigate(parent.id);controls.append(back)}const hide=document.createElement('button');hide.className='icon-btn';hide.textContent='×';hide.title='설명 패널 닫기';hide.className+=' mobile-close';hide.onclick=()=>{panelOpen=false;el('detail').classList.remove('mobile-open')};controls.append(hide);top.append(label,controls);head.append(top);
  const glyph=document.createElement('div');glyph.className='detail-icon';glyph.textContent=n.icon||'✦';const title=document.createElement('h2');title.className='detail-title';title.textContent=n.title;const intro=document.createElement('div');intro.className='detail-intro';intro.textContent=n.short||'이 개념의 설명을 추가해 보세요.';head.append(glyph,title,intro);
@@ -134,56 +246,76 @@ function renderDetail(){const n=byId(focus)||byId(root);const hue=colorOf(n);con
  const sub=children(n.id);if(sub.length){const s=document.createElement('section');s.className='detail-section';const sh=document.createElement('div');sh.className='section-heading';const dot=document.createElement('span');dot.className='section-mark';sh.append(dot,document.createTextNode(`하위 개념 · ${sub.length}개`));s.append(sh);const chips2=document.createElement('div');chips2.className='chip-list';sub.forEach(item=>{const chip=document.createElement('button');chip.className='chip';chip.textContent=item.title+' ↗';chip.onclick=()=>navigate(item.id);chips2.append(chip)});s.append(chips2);scroll.append(s)}
  scroll.scrollTop=0;
 }
-function navigate(id){if(!byId(id))return;if(focus===id){openPanel();return}if(transitioning)return;transitioning=true;const view=el('viewport');view.classList.add('out');setTimeout(()=>{focus=id;resetMapCamera();renderMap();renderDetail();view.classList.remove('out');view.classList.remove('in');void view.offsetWidth;view.classList.add('in');transitioning=false;},150)}
-function redraw(){if(!transitioning)renderMap()}
 
-// Map-only zoom / pan. Transform a separate camera wrapper so navigation animation stays intact.
-const mapCamera={scale:1,x:0,y:0},MAP_ZOOM_MIN=.45,MAP_ZOOM_MAX=3.2;
+function navigate(id){
+ if(!byId(id))return;
+ focus=id;
+ for(const ancestor of ancestors(id))expandedConcepts.add(ancestor.id);
+ renderMap();renderDetail();
+ focusMapNode(id);
+}
+function redraw(){renderMap();applyMapCamera()}
+const mapCamera={scale:1,x:0,y:0},MAP_ZOOM_MIN=.01,MAP_ZOOM_MAX=1;
 let mapPointer=null;
 function applyMapCamera(){
- const camera=el('mapCamera');
- camera.style.transform=`translate3d(${mapCamera.x}px,${mapCamera.y}px,0) scale(${mapCamera.scale})`;
+ el('mapCamera').style.transform='translate3d('+mapCamera.x+'px,'+mapCamera.y+'px,0) scale('+mapCamera.scale+')';
  el('zoomLevel').textContent=Math.round(mapCamera.scale*100)+'%';
 }
 function zoomMapAt(factor,clientX,clientY){
- const a=el('mapArea').getBoundingClientRect();
- const target=Math.max(MAP_ZOOM_MIN,Math.min(MAP_ZOOM_MAX,mapCamera.scale*factor));
- if(target===mapCamera.scale)return;
- // Screen point = viewport center + translation + scale * local coordinate.
- // Preserve the point under the pointer while adjusting the camera scale.
- const ratio=target/mapCamera.scale;
- const px=clientX-a.left-a.width/2,py=clientY-a.top-a.height/2;
+ const bounds=el('mapArea').getBoundingClientRect();
+ const next=Math.max(MAP_ZOOM_MIN,Math.min(MAP_ZOOM_MAX,mapCamera.scale*factor));
+ if(Math.abs(next-mapCamera.scale)<.00000001)return;
+ const ratio=next/mapCamera.scale;
+ const px=clientX-bounds.left-bounds.width/2;
+ const py=clientY-bounds.top-bounds.height/2;
  mapCamera.x=px-ratio*(px-mapCamera.x);
  mapCamera.y=py-ratio*(py-mapCamera.y);
- mapCamera.scale=target;
+ mapCamera.scale=next;
  applyMapCamera();
 }
-function resetMapCamera(){
- mapCamera.scale=1;mapCamera.x=0;mapCamera.y=0;
+function fitMapToContent(){
+ if(!mapPositions.size)return;
+ const a=el('mapArea'),w=a.clientWidth,h=a.clientHeight;
+ const points=[...mapPositions.values()];
+ const minX=Math.min(...points.map(p=>p.x))-115;
+ const maxX=Math.max(...points.map(p=>p.x))+115;
+ const minY=Math.min(...points.map(p=>p.y))-110;
+ const maxY=Math.max(...points.map(p=>p.y))+110;
+ const fit=Math.min(1,(w-65)/Math.max(1,maxX-minX),(h-95)/Math.max(1,maxY-minY));
+ mapCamera.scale=Math.max(MAP_ZOOM_MIN,Math.min(MAP_ZOOM_MAX,fit));
+ mapCamera.x=-((minX+maxX)/2-w/2)*mapCamera.scale;
+ mapCamera.y=-((minY+maxY)/2-h/2)*mapCamera.scale;
+ applyMapCamera();
+}
+function focusMapNode(id){
+ const p=mapPositions.get(id);
+ if(!p)return;
+ const a=el('mapArea');
+ mapCamera.x=-(p.x-a.clientWidth/2)*mapCamera.scale;
+ mapCamera.y=-(p.y-a.clientHeight/2)*mapCamera.scale;
  applyMapCamera();
 }
 function initMapCamera(){
  const area=el('mapArea');
  area.addEventListener('wheel',e=>{
-  if(!e.ctrlKey)return;
+  if(e.target.closest('.map-controls,.mobile-detail-toggle'))return;
   e.preventDefault();
-  if(transitioning)return;
-  const normalized=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?area.clientHeight:1);
-  const amount=Math.max(-260,Math.min(260,normalized));
-  zoomMapAt(Math.exp(-amount*.004),e.clientX,e.clientY);
- },{passive:false});
- el('zoomInBtn').addEventListener('click',()=>{
-  const r=area.getBoundingClientRect();zoomMapAt(1.25,r.left+r.width/2,r.top+r.height/2);
- });
- el('zoomOutBtn').addEventListener('click',()=>{
-  const r=area.getBoundingClientRect();zoomMapAt(.8,r.left+r.width/2,r.top+r.height/2);
- });
- el('zoomResetBtn').addEventListener('click',resetMapCamera);
+  const multiplier=e.deltaMode===1?18:e.deltaMode===2?area.clientHeight:1;
+  const d=Math.max(-260,Math.min(260,e.deltaY*multiplier));
+  zoomMapAt(Math.exp(-d*.0036),e.clientX,e.clientY);
+ },{passive:false,capture:true});
+ function zoomCenter(factor){
+  const a=area.getBoundingClientRect();
+  zoomMapAt(factor,a.left+a.width/2,a.top+a.height/2);
+ }
+ el('zoomInBtn').onclick=()=>zoomCenter(1.4);
+ el('zoomOutBtn').onclick=()=>zoomCenter(1/1.4);
+ el('zoomResetBtn').onclick=fitMapToContent;
  area.addEventListener('pointerdown',e=>{
-  if(transitioning||mapPointer!==null||e.button!==0||e.target.closest('button,a,input,textarea,select,.map-label,.map-controls,.map-hint,.legend'))return;
+  if(mapPointer||e.button!==0||e.target.closest('button,a,input,textarea,select,.map-label,.map-controls,.legend'))return;
   mapPointer={id:e.pointerId,x:e.clientX,y:e.clientY};
-  area.setPointerCapture(e.pointerId);
   area.classList.add('is-panning');
+  area.setPointerCapture(e.pointerId);
   e.preventDefault();
  });
  area.addEventListener('pointermove',e=>{
@@ -193,15 +325,15 @@ function initMapCamera(){
   mapPointer.x=e.clientX;mapPointer.y=e.clientY;
   applyMapCamera();
  });
- function stopPan(e){
+ function stop(e){
   if(!mapPointer||mapPointer.id!==e.pointerId)return;
   mapPointer=null;area.classList.remove('is-panning');
   if(area.hasPointerCapture(e.pointerId))area.releasePointerCapture(e.pointerId);
  }
- area.addEventListener('pointerup',stopPan);
- area.addEventListener('pointercancel',stopPan);
+ area.addEventListener('pointerup',stop);
+ area.addEventListener('pointercancel',stop);
  area.addEventListener('lostpointercapture',e=>{
-  if(mapPointer?.id===e.pointerId){mapPointer=null;area.classList.remove('is-panning')}
+  if(mapPointer&&mapPointer.id===e.pointerId){mapPointer=null;area.classList.remove('is-panning')}
  });
  applyMapCamera();
 }
@@ -212,8 +344,8 @@ function showModal(){el('modal').classList.remove('hidden')}
 function mountDialog(title,desc){const overlay=el('modal');overlay.replaceChildren();const d=document.createElement('div');d.className='dialog';const h=document.createElement('div');h.className='dialog-head';const titleBox=document.createElement('div');titleBox.innerHTML=`<div class="dialog-title">${escape(title)}</div><div class="dialog-desc">${escape(desc)}</div>`;const close=document.createElement('button');close.className='icon-btn';close.textContent='×';close.setAttribute('aria-label','닫기');close.onclick=closeModal;h.append(titleBox,close);const body=document.createElement('div');body.className='dialog-body';const actions=document.createElement('div');actions.className='dialog-actions';d.append(h,body,actions);overlay.append(d);showModal();return {body,actions,d}}
 function inputField(label,value='',area=false,rows=2,max=1200){const wrap=document.createElement('div');wrap.className='field';const l=document.createElement('label');l.textContent=label;const control=document.createElement(area?'textarea':'input');if(area){control.rows=rows}else control.type='text';control.value=value||'';control.maxLength=max;wrap.append(l,control);return {wrap,control}}
 function editPalette(container,current){editColor=current;const p=document.createElement('div');p.className='palette';Object.entries(COLORS).filter(([key])=>key!=='root').forEach(([key,color])=>{const b=document.createElement('button');b.type='button';b.style.background=color;b.title=key;b.setAttribute('aria-label',`${key} 색상`);if(editColor===key)b.classList.add('selected');b.onclick=()=>{editColor=key;p.querySelectorAll('button').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')};p.append(b)});container.append(p)}
-function openEditor(mode,id){modalMode=mode;const n=mode==='edit'?byId(id):null;const current=byId(focus);const d=mountDialog(mode==='edit'?'개념 수정':'새 개념 추가',mode==='edit'?'기존 설명을 자유롭게 수정할 수 있습니다.':`「${current.title}」의 하위 개념으로 연결됩니다.`);const title=inputField('개념 이름 *',n?.title, false,1,55),icon=inputField('아이콘 · 이모지나 기호',n?.icon||'✦',false,1,8),short=inputField('한눈에 보는 개념 · 짧은 설명',n?.short,true,2,280),detail=inputField('개념 설명 · 쉬운 말로 작성',n?.detail,true,3,3000),example=inputField('실제 사례',n?.example,true,2,1800),exam=inputField('시험 포인트',n?.exam,true,2,1800),memory=inputField('한 줄 암기',n?.memory,true,2,500);const group=document.createElement('div');group.className='form-grid';group.append(title.wrap,icon.wrap);d.body.append(group,short.wrap,detail.wrap,example.wrap,exam.wrap,memory.wrap);const colorField=document.createElement('div');colorField.className='field';colorField.innerHTML='<label>개념 색상</label>';editPalette(colorField,n?.color||current.color);d.body.append(colorField);const cancel=document.createElement('button');cancel.textContent='취소';cancel.onclick=closeModal;d.actions.append(cancel);if(mode==='edit'&&n&&!n.builtIn&&n.id!==root){const del=document.createElement('button');del.textContent='삭제';del.className='danger';del.onclick=()=>{if(!confirm(`「${n.title}」와 그 하위 개념을 모두 삭제할까요? 이 작업은 되돌릴 수 없습니다.`))return;const ids=new Set([n.id]);let hasNew=true;while(hasNew){hasNew=false;nodes.forEach(node=>{if(ids.has(node.parent)&&!ids.has(node.id)){ids.add(node.id);hasNew=true}})}nodes=nodes.filter(node=>!ids.has(node.id));links=links.filter(l=>!ids.has(l.a)&&!ids.has(l.b));const parent=n.parent;save();closeModal();focus=parent;renderMap();renderDetail();toast('개념을 삭제했습니다.')};d.actions.prepend(del)}
- const submit=document.createElement('button');submit.className='primary';submit.textContent=mode==='edit'?'수정 저장':'개념 추가';submit.onclick=()=>{const name=title.control.value.trim();if(!name){title.control.focus();toast('개념 이름을 입력해 주세요.');return}if(mode==='add'&&nodes.length>1200){toast('개념이 너무 많습니다.');return}const values={title:name,icon:icon.control.value.trim()||'✦',short:short.control.value.trim(),detail:detail.control.value.trim(),example:example.control.value.trim(),exam:exam.control.value.trim(),memory:memory.control.value.trim(),color:editColor,priority:'★★'};if(mode==='edit'){Object.assign(n,values)}else{const newId='u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);nodes.push({id:newId,parent:focus,...values,builtIn:false});}save();closeModal();renderMap();renderDetail();toast(mode==='edit'?'개념을 수정했습니다.':'새 개념을 연결했습니다.');};d.actions.append(submit);setTimeout(()=>title.control.focus(),60)}
+function openEditor(mode,id){modalMode=mode;const n=mode==='edit'?byId(id):null;const current=byId(focus);const d=mountDialog(mode==='edit'?'개념 수정':'새 개념 추가',mode==='edit'?'기존 설명을 자유롭게 수정할 수 있습니다.':`「${current.title}」의 하위 개념으로 연결됩니다.`);const title=inputField('개념 이름 *',n?.title, false,1,55),icon=inputField('아이콘 · 이모지나 기호',n?.icon||'✦',false,1,8),short=inputField('한눈에 보는 개념 · 짧은 설명',n?.short,true,2,280),detail=inputField('개념 설명 · 쉬운 말로 작성',n?.detail,true,3,3000),example=inputField('실제 사례',n?.example,true,2,1800),exam=inputField('시험 포인트',n?.exam,true,2,1800),memory=inputField('한 줄 암기',n?.memory,true,2,500);const group=document.createElement('div');group.className='form-grid';group.append(title.wrap,icon.wrap);d.body.append(group,short.wrap,detail.wrap,example.wrap,exam.wrap,memory.wrap);const colorField=document.createElement('div');colorField.className='field';colorField.innerHTML='<label>개념 색상</label>';editPalette(colorField,n?.color||current.color);d.body.append(colorField);const cancel=document.createElement('button');cancel.textContent='취소';cancel.onclick=closeModal;d.actions.append(cancel);if(mode==='edit'&&n&&!n.builtIn&&n.id!==root){const del=document.createElement('button');del.textContent='삭제';del.className='danger';del.onclick=()=>{if(!confirm(`「${n.title}」와 그 하위 개념을 모두 삭제할까요? 이 작업은 되돌릴 수 없습니다.`))return;const ids=new Set([n.id]);let hasNew=true;while(hasNew){hasNew=false;nodes.forEach(node=>{if(ids.has(node.parent)&&!ids.has(node.id)){ids.add(node.id);hasNew=true}})}nodes=nodes.filter(node=>!ids.has(node.id));links=links.filter(l=>!ids.has(l.a)&&!ids.has(l.b));const parent=n.parent;save();closeModal();focus=parent;expandedConcepts.delete(n.id);renderMap();renderDetail();fitMapToContent();toast('개념을 삭제했습니다.')};d.actions.prepend(del)}
+ const submit=document.createElement('button');submit.className='primary';submit.textContent=mode==='edit'?'수정 저장':'개념 추가';submit.onclick=()=>{const name=title.control.value.trim();if(!name){title.control.focus();toast('개념 이름을 입력해 주세요.');return}if(mode==='add'&&nodes.length>1200){toast('개념이 너무 많습니다.');return}const values={title:name,icon:icon.control.value.trim()||'✦',short:short.control.value.trim(),detail:detail.control.value.trim(),example:example.control.value.trim(),exam:exam.control.value.trim(),memory:memory.control.value.trim(),color:editColor,priority:'★★'};if(mode==='edit'){Object.assign(n,values)}else{const newId='u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);nodes.push({id:newId,parent:focus,...values,builtIn:false});expandedConcepts.add(focus);}save();closeModal();renderMap();renderDetail();fitMapToContent();toast(mode==='edit'?'개념을 수정했습니다.':'새 개념을 연결했습니다.');};d.actions.append(submit);setTimeout(()=>title.control.focus(),60)}
 function openSearch(mode='navigate'){searchMode=mode;modalMode='search';const current=byId(focus);const d=mountDialog(mode==='link'?'개념 연결하기':'개념 검색',mode==='link'?`「${current.title}」와 연결할 개념을 찾아 선택하세요.`:'어떤 개념이든 검색하여 바로 이동할 수 있습니다.');const bar=document.createElement('div');bar.className='search-bar';const mag=document.createElement('span');mag.textContent='⌕';const inp=document.createElement('input');inp.type='search';inp.placeholder='예: KDD, t통계량, 군집, 거버넌스';bar.append(mag,inp);d.body.append(bar);const results=document.createElement('div');results.className='search-results';d.body.append(results);d.actions.style.display='none';function update(){results.replaceChildren();const q=inp.value.trim().toLowerCase();const filtered=nodes.filter(n=>(mode!=='link'||n.id!==focus)&&(n.title.toLowerCase().includes(q)||n.short.toLowerCase().includes(q))).slice(0,35);if(!filtered.length){const empty=document.createElement('div');empty.className='empty-search';empty.textContent='검색 결과가 없습니다.';results.append(empty)}filtered.forEach(item=>{const bt=document.createElement('button');bt.className='search-item';const ico=document.createElement('div');ico.className='sicon';ico.textContent=item.icon||'◉';const v=document.createElement('div');const tt=document.createElement('div');tt.className='s-title';tt.textContent=item.title;const path=document.createElement('div');path.className='s-path';path.textContent=ancestors(item.id).slice(1,-1).map(n=>n.title).join(' › ')||'ADsP';v.append(tt,path);bt.append(ico,v);bt.onclick=()=>{if(mode==='link'){if(!links.some(l=>(l.a===focus&&l.b===item.id)||(l.b===focus&&l.a===item.id))){links.push({a:focus,b:item.id});save();renderDetail();toast('두 개념을 연결했습니다.')}else toast('이미 연결된 개념입니다.')}else navigate(item.id);closeModal()};results.append(bt)})}inp.addEventListener('input',update);update();setTimeout(()=>inp.focus(),35)}
 function download(name,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function openData(){modalMode='data';const d=mountDialog('내 학습 데이터','학습 내용을 JSON으로 백업하거나 불러올 수 있습니다. 클라우드 연결 시 다른 기기와 자동 동기화됩니다.');const helper=document.createElement('div');helper.className='helper';helper.textContent='수정 내용은 이 브라우저에 먼저 저장되고, 클라우드 연결 시 자동 동기화됩니다. 무료 플랜에는 자동 백업이 없으니 JSON 파일도 보관하세요.';d.body.append(helper);const box=document.createElement('div');box.className='toolrow';box.style.marginTop='20px';const exportBtn=document.createElement('button');exportBtn.textContent='↓ JSON 백업 저장';exportBtn.onclick=()=>{download('ADsP_ATLAS_학습데이터.json',JSON.stringify({version:1,exportedAt:new Date().toISOString(),nodes,links},null,2),'application/json;charset=utf-8');toast('학습 데이터를 내보냈습니다.')};const importBtn=document.createElement('button');importBtn.textContent='↑ JSON 불러오기';const file=document.createElement('input');file.type='file';file.accept='.json,application/json';file.style.display='none';importBtn.onclick=()=>file.click();file.onchange=()=>{const f=file.files?.[0];if(!f)return;if(f.size>4*1024*1024){toast('4MB 이하 JSON을 선택해 주세요.');return}const reader=new FileReader();reader.onload=()=>{try{const parsed=JSON.parse(String(reader.result));if(!Array.isArray(parsed.nodes)||!Array.isArray(parsed.links)||!parsed.nodes.some(n=>n.id===root)||parsed.nodes.length>1500||parsed.nodes.some(n=>typeof n.id!=='string'||typeof n.title!=='string'||!n.id||n.title.length>100))throw Error('format');if(!confirm('현재 학습 데이터를 불러온 내용으로 바꿀까요? 먼저 JSON으로 백업하면 안전합니다.'))return;const set=new Set(parsed.nodes.map(n=>n.id));if(set.size!==parsed.nodes.length)throw Error('duplicates');nodes=parsed.nodes.map(n=>({...n,title:n.title.slice(0,100),short:String(n.short||'').slice(0,3000),detail:String(n.detail||'').slice(0,6000),example:String(n.example||'').slice(0,4000),exam:String(n.exam||'').slice(0,4000),memory:String(n.memory||'').slice(0,1200),icon:String(n.icon||'✦').slice(0,16),color:COLORS[n.color]?n.color:'root'}));links=parsed.links.filter(l=>set.has(l.a)&&set.has(l.b)&&l.a!==l.b);focus=root;save();closeModal();renderMap();renderDetail();toast('학습 데이터를 불러왔습니다.')}catch(e){toast('올바른 ADsP ATLAS JSON 파일이 아닙니다.')}};reader.readAsText(f,'utf-8')};box.append(exportBtn,importBtn,file);d.body.append(box);const sep=document.createElement('div');sep.style.cssText='border-top:1px solid rgba(255,255,255,.1);margin:24px 0';d.body.append(sep);const hint=document.createElement('div');hint.className='helper';hint.textContent='초기 교재로 되돌리면 직접 추가한 개념과 수정 내역이 모두 사라집니다. 이전 상태를 유지하려면 반드시 백업하세요.';d.body.append(hint);const reset=document.createElement('button');reset.className='soft-btn';reset.style.cssText='margin-top:12px;color:#ffafb1;border-color:rgba(255,160,160,.34)';reset.textContent='초기 교재로 되돌리기';reset.onclick=()=>{if(!confirm('기존 학습 데이터를 모두 초기화할까요? 이 작업은 되돌릴 수 없습니다.'))return;nodes=structuredClone(defaultNodes);links=structuredClone(defaultLinks);focus=root;save();closeModal();renderMap();renderDetail();toast('기본 교재로 초기화했습니다.')};d.body.append(reset);const close=document.createElement('button');close.textContent='닫기';close.onclick=closeModal;d.actions.append(close)}
@@ -351,5 +483,5 @@ function openCloud(){
 }
 
 let toastTimer;function toast(msg){const t=el('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600)}
-function init(){load();initMapCamera();if(!localStorage.getItem(CLOUD_OWNER)&&localStorage.getItem(CLOUD_DIRTY)!=='1'&&cloudLocalLooksEdited()){localStorage.setItem(CLOUD_DIRTY,'1')}cloudDirty=localStorage.getItem(CLOUD_DIRTY)==='1';el('cloudBtn').onclick=openCloud;el('homeBtn').onclick=()=>navigate(root);el('searchBtn').onclick=()=>openSearch();el('dataBtn').onclick=openData;el('topAddBtn').onclick=()=>openEditor('add');el('childAddBtn').onclick=()=>openEditor('add');el('mobilePanelBtn').onclick=()=>{panelOpen=!panelOpen;el('detail').classList.toggle('mobile-open',panelOpen)};el('modal').addEventListener('click',e=>{if(e.target===el('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!el('modal').classList.contains('hidden'))closeModal();else if(panelOpen){panelOpen=false;el('detail').classList.remove('mobile-open')}else if(byId(focus)?.parent)navigate(byId(focus).parent)}if(e.key==='/'&&!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement)&&el('modal').classList.contains('hidden')){e.preventDefault();openSearch()}});let r;const observer=new ResizeObserver(()=>{clearTimeout(r);r=setTimeout(redraw,80)});observer.observe(el('mapArea'));renderMap();renderDetail();cloudInit();document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudRefresh()});window.addEventListener('online',()=>cloudRefresh());setInterval(()=>{if(!document.hidden)cloudRefresh()},30000)};init();
+function init(){load();initMapCamera();if(!localStorage.getItem(CLOUD_OWNER)&&localStorage.getItem(CLOUD_DIRTY)!=='1'&&cloudLocalLooksEdited()){localStorage.setItem(CLOUD_DIRTY,'1')}cloudDirty=localStorage.getItem(CLOUD_DIRTY)==='1';el('cloudBtn').onclick=openCloud;el('homeBtn').onclick=expandAllMindmap;el('searchBtn').onclick=()=>openSearch();el('dataBtn').onclick=openData;el('topAddBtn').onclick=()=>openEditor('add');el('childAddBtn').onclick=()=>openEditor('add');el('mobilePanelBtn').onclick=()=>{panelOpen=!panelOpen;el('detail').classList.toggle('mobile-open',panelOpen)};el('modal').addEventListener('click',e=>{if(e.target===el('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!el('modal').classList.contains('hidden'))closeModal();else if(panelOpen){panelOpen=false;el('detail').classList.remove('mobile-open')}else if(byId(focus)?.parent)navigate(byId(focus).parent)}if(e.key==='/'&&!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement)&&el('modal').classList.contains('hidden')){e.preventDefault();openSearch()}});let r;const observer=new ResizeObserver(()=>{clearTimeout(r);r=setTimeout(redraw,80)});observer.observe(el('mapArea'));renderMap();renderDetail();fitMapToContent();cloudInit();document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudRefresh()});window.addEventListener('online',()=>cloudRefresh());setInterval(()=>{if(!document.hidden)cloudRefresh()},30000)};init();
 })();
