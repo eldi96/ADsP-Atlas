@@ -63,3 +63,33 @@
 .map-area{overscroll-behavior:contain}
 .map-label{pointer-events:none}
 @media(max-width:520px){.mind-node.node.focus{width:154px;height:154px}.mind-node.node.child{width:128px;height:128px}}
+
+/* ADsP Study Mode — quiet, high-contrast, low-saturation dark UI. */
+:root{--bg:#0b0e13;--surface:#151921;--panel:#11151d;--text:#e4e9ef;--muted:#9ba5b0;--line:rgba(181,193,207,.13);--accent:#aab9c9;--glow:rgba(151,171,190,.08)}
+html,body{background:#0b0e13;color:#e4e9ef}
+.app{background:#0b0e13}
+.topbar{background:#11151b;border-bottom:1px solid #27303c}
+.brand-icon{background:#1c2730;border-color:#3a4b57;box-shadow:none;color:#cbd5df}
+.brand-main{color:#e9edf2}.brand-sub{color:#8998a6}
+.top-action{filter:saturate(.42)}.top-action.primary{background:#2a3643!important;color:#e6edf4!important;border-color:#465363!important}
+.crumb button{color:#aab7c4}.crumb button.active{color:#e9edf2}
+.map-area{background:radial-gradient(ellipse 85% 78% at 50% 50%,#161d26 0%,#10151c 52%,#0b1016 100%)!important}
+.map-area::before{background-image:radial-gradient(circle,rgba(180,193,208,.17) .65px,transparent 1px);background-size:28px 28px;opacity:.34;mask-image:none}
+.map-label{z-index:6}.eyebrow{color:#93a7ba}.map-title{color:#eff3f7}.map-description{color:#9ba8b6}
+.mind-node.node,.mind-node.node.focus,.mind-node.node.child{width:132px;height:132px}
+.mind-node.node.focus{width:152px;height:152px}
+.mind-node .node-ring{background:radial-gradient(circle at 35% 20%,color-mix(in srgb,var(--hue),#17202b 69%),#111923 68%,#10161f 100%)!important;border:1px solid color-mix(in srgb,var(--hue),#36404b 48%)!important;box-shadow:0 0 0 5px rgba(141,164,185,.035),0 14px 35px rgba(0,0,0,.25)!important}
+.mind-node.selected .node-ring{border-width:2px!important;box-shadow:0 0 0 8px rgba(182,194,208,.09),0 0 30px rgba(164,187,210,.12)!important}
+.mind-node .glyph{filter:none;color:#cad4df}.mind-node .node-name{color:#e7edf4}.mind-node .node-meta{color:#a3afbd!important}
+.concept-branch{stroke-width:2;opacity:.55}.concept-crosslink{stroke:#888a9a;opacity:.32;stroke-width:1.2}
+.map-controls{background:#171d25;border-color:#303b49;box-shadow:0 12px 36px rgba(0,0,0,.34)}
+.map-controls button{color:#d6e1eb}.map-controls button:hover{background:#2a3441}.map-controls .zoom-level{color:#b2c0cf}
+.legend{color:#9aa8b5}.legend-dot{filter:saturate(.38);box-shadow:none}
+.detail{background:#121820!important;border-left:1px solid #273341}
+.detail-header{border-bottom:1px solid #273341}.detail-icon{filter:saturate(.5)}
+.detail-title{color:#e8edf2}.detail-intro,.section-copy{color:#c0c9d2}
+.section-heading,.chapter-label{color:#99a9ba}
+.cloud-state{background:#1a222b;border-color:#34404b;color:#b9c6d3}
+.cloud-state[data-kind=online] .cloud-indicator{background:#9abbb0;box-shadow:none}
+.overlay{backdrop-filter:blur(6px)}
+@media(max-width:520px){.mind-node.node.focus{width:152px;height:152px}.mind-node.node.child{width:132px;height:132px}}
