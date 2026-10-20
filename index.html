@@ -14,7 +14,7 @@
     <nav class="crumb" id="crumb" aria-label="현재 위치"></nav>
     <div class="top-actions">
       <button class="cloud-state" id="cloudBtn" data-kind="offline" title="클라우드 동기화 상태"><span class="cloud-indicator"></span><span id="cloudStatus">클라우드 설정</span></button>
-      <button class="top-action" id="homeBtn" title="전체 지도">⌂ <span>전체 지도</span></button>
+      <button class="top-action" id="homeBtn" title="모든 개념 펼쳐보기">⌂ <span>전체 지도</span></button>
       <button class="top-action" id="searchBtn" title="개념 검색 (/)" aria-label="검색">⌕ <span>개념 검색</span></button>
       <button class="top-action" id="dataBtn" title="백업 및 불러오기">⇪ <span>내 데이터</span></button>
       <button class="top-action primary" id="topAddBtn" title="하위 개념 추가">＋ <span>개념 추가</span></button>
@@ -22,7 +22,7 @@
   </header>
   <main class="workspace">
     <section class="map-area" id="mapArea" aria-label="개념 마인드맵">
-      <div class="map-label"><div class="eyebrow" id="sectionEyebrow">THE BIG PICTURE</div><div class="map-title" id="mapTitle">세 과목, 하나의 지도</div><div class="map-description" id="mapDescription">행성을 누르면 그 안의 개념이 펼쳐집니다.</div></div>
+      <div class="map-label"><div class="eyebrow" id="sectionEyebrow">THE BIG PICTURE</div><div class="map-title" id="mapTitle">세 과목, 하나의 지도</div><div class="map-description" id="mapDescription">행성을 눌러 가지를 계속 펼쳐 보세요.</div></div>
       <button class="mobile-detail-toggle" id="mobilePanelBtn">☰ 개념 설명</button>
       <div class="map-camera" id="mapCamera"><div class="map-viewport" id="viewport"><svg class="orbit-layer" id="orbits" aria-hidden="true"></svg><svg class="edge-layer" id="edges" aria-hidden="true"></svg><div id="nodes"></div></div></div>
       <div class="map-controls" role="group" aria-label="마인드맵 확대 축소">
@@ -31,7 +31,7 @@
         <button id="zoomOutBtn" type="button" aria-label="지도 축소" title="축소">－</button>
       </div>
       <div class="legend"><span><i class="legend-dot" style="--dot:#57dbc3"></i>데이터 이해</span><span><i class="legend-dot" style="--dot:#f4ad78"></i>분석 기획</span><span><i class="legend-dot" style="--dot:#ae9bff"></i>데이터 분석</span></div>
-      <div class="map-hint">Ctrl + 휠 확대·축소 · 빈 곳 드래그 이동 · 원 클릭 탐색</div>
+      
     </section>
     <aside class="detail" id="detail" aria-label="개념 설명 패널">
       <div class="detail-header" id="detailHeader"></div>
