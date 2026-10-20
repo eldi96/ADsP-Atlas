@@ -34,3 +34,15 @@
 .cloud-input:focus{border-color:#82cfff}.cloud-field{display:flex;flex-direction:column;gap:7px;margin:12px 0}.cloud-field label{color:#acbdd0;font-size:12px;font-weight:700}.cloud-note{font-size:12px;line-height:1.8;color:#aabed4;margin:7px 0 12px}.cloud-kbd{font-family:Consolas,monospace;font-size:11px;overflow-wrap:anywhere;color:#c3e4f6}.cloud-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.cloud-actions button{padding:11px 14px;border-radius:9px;background:#152940;border:1px solid rgba(167,198,225,.26);color:#d9ebfd;font-size:12px;font-weight:700}.cloud-actions button.primary{background:#bce9ff;color:#081725}.cloud-actions button.danger{color:#ffbbc3;border-color:rgba(253,153,164,.28)}
 @media(max-width:980px){.cloud-state span:last-child{display:none}.cloud-state{padding:12px}.topbar{gap:8px}}
 @media(max-width:520px){.cloud-state{padding:10px 7px}.cloud-state .cloud-indicator{height:7px;width:7px}}
+
+/* Independent camera controls: move and zoom only the concept map, not the browser. */
+.map-camera{position:absolute;inset:0;z-index:2;transform-origin:50% 50%;will-change:transform;cursor:grab;touch-action:none}
+.map-area.is-panning .map-camera{cursor:grabbing}
+.map-area.is-panning{user-select:none;-webkit-user-select:none}
+.map-controls{position:absolute;z-index:9;right:22px;bottom:21px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px;border:1px solid rgba(167,207,244,.2);border-radius:14px;background:rgba(11,23,40,.85);box-shadow:0 9px 35px rgba(0,0,0,.23);backdrop-filter:blur(14px)}
+.map-controls button{display:grid;place-items:center;min-width:40px;min-height:37px;padding:0 4px;border:0;border-radius:9px;background:transparent;color:#d5edff;font-size:23px;line-height:1}
+.map-controls button:hover{background:rgba(145,202,248,.16)}
+.map-controls button:focus-visible{outline:2px solid #a0e0ff;outline-offset:1px}
+.map-controls .zoom-level{font-family:inherit;font-size:11px;letter-spacing:0;font-weight:750;color:#91c7e8;min-height:30px;min-width:45px}
+.map-hint{right:91px;bottom:30px}
+@media(max-width:520px){.map-controls{right:12px;bottom:14px}.map-controls button{min-width:38px;min-height:35px}.map-hint{left:14px;right:82px;bottom:24px;font-size:9px;max-width:200px;line-height:1.45}}
