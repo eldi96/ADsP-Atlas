@@ -291,12 +291,162 @@ function expandAllMindmap(){
  fitMapToContent();
 }
 
-function makeSection(title,content,asMemory=false){if(!content)return null;const div=document.createElement('section');div.className='detail-section';const heading=document.createElement('div');heading.className='section-heading';const mark=document.createElement('span');mark.className='section-mark';heading.append(mark,document.createTextNode(title));div.append(heading);const p=document.createElement('div');p.className=asMemory?'memory-card':'section-copy';p.textContent=content;div.append(p);return div}
-function renderDetail(){const n=byId(focus)||byId(root);const hue=colorOf(n);const detail=el('detail');detail.style.setProperty('--detail-hue',hue);el('childAddBtn').style.background=hue;const head=el('detailHeader');head.replaceChildren();const top=document.createElement('div');top.className='panel-top';const label=document.createElement('div');label.className='chapter-label';label.textContent=n.id===root?'YOUR LEARNING GALAXY':(course(n)?.title||'LEARNING NOTE').toUpperCase();const controls=document.createElement('div');controls.className='panel-buttons';const edit=document.createElement('button');edit.className='icon-btn';edit.textContent='✎';edit.title='개념 수정';edit.setAttribute('aria-label','개념 수정');edit.onclick=()=>openEditor('edit',n.id);controls.append(edit);const parent=byId(n.parent);if(parent){const back=document.createElement('button');back.className='icon-btn';back.textContent='↶';back.title='상위 개념으로';back.onclick=()=>navigate(parent.id);controls.append(back)}const hide=document.createElement('button');hide.className='icon-btn';hide.textContent='×';hide.title='설명 패널 닫기';hide.className+=' mobile-close';hide.onclick=()=>{panelOpen=false;el('detail').classList.remove('mobile-open')};controls.append(hide);top.append(label,controls);head.append(top);
- const glyph=document.createElement('div');glyph.className='detail-icon';glyph.textContent=n.icon||'✦';const title=document.createElement('h2');title.className='detail-title';title.textContent=n.title;const intro=document.createElement('div');intro.className='detail-intro';intro.textContent=n.short||'이 개념의 설명을 추가해 보세요.';head.append(glyph,title,intro);
- const scroll=el('detailScroll');scroll.replaceChildren();const parts=[makeSection('쉽게 이해하기',n.detail),makeSection('실제 활용 예시',n.example),makeSection('ADsP 시험 포인트',n.exam),makeSection('한 줄 암기',n.memory,true)];parts.filter(Boolean).forEach(x=>scroll.append(x));
- const related=links.filter(l=>l.a===n.id||l.b===n.id).map(l=>byId(l.a===n.id?l.b:l.a)).filter(Boolean);const sec=document.createElement('section');sec.className='detail-section';const heading=document.createElement('div');heading.className='section-heading';const mark=document.createElement('span');mark.className='section-mark';heading.append(mark,document.createTextNode('연결된 개념'));sec.append(heading);const chips=document.createElement('div');chips.className='chip-list';related.forEach(item=>{const chip=document.createElement('button');chip.className='chip';chip.textContent=`${item.icon||'◉'} ${item.title} ↗`;chip.onclick=()=>navigate(item.id);chips.append(chip)});const linkButton=document.createElement('button');linkButton.className='soft-btn';linkButton.textContent='＋ 다른 개념 연결';linkButton.onclick=()=>openSearch('link');chips.append(linkButton);sec.append(chips);scroll.append(sec);
- const sub=children(n.id);if(sub.length){const s=document.createElement('section');s.className='detail-section';const sh=document.createElement('div');sh.className='section-heading';const dot=document.createElement('span');dot.className='section-mark';sh.append(dot,document.createTextNode(`하위 개념 · ${sub.length}개`));s.append(sh);const chips2=document.createElement('div');chips2.className='chip-list';sub.forEach(item=>{const chip=document.createElement('button');chip.className='chip';chip.textContent=item.title+' ↗';chip.onclick=()=>navigate(item.id);chips2.append(chip)});s.append(chips2);scroll.append(s)}
+
+function makeSection(title,content,index,variant=''){
+ if(!content)return null;
+ const section=document.createElement('section');
+ section.className='detail-section'+(variant?' '+variant:'');
+ const heading=document.createElement('div');
+ heading.className='section-heading';
+ const count=document.createElement('span');
+ count.className='section-index';
+ count.textContent=index;
+ const name=document.createElement('h3');
+ name.className='section-title';
+ name.textContent=title;
+ heading.append(count,name);
+ section.append(heading);
+ const body=document.createElement('div');
+ body.className=variant==='memory-section'?'memory-card':'section-copy';
+ body.textContent=content;
+ section.append(body);
+ return section;
+}
+function makeRelatedSection(title,index){
+ const section=document.createElement('section');
+ section.className='detail-section related-section';
+ const heading=document.createElement('div');
+ heading.className='section-heading';
+ const count=document.createElement('span');
+ count.className='section-index';
+ count.textContent=index;
+ const text=document.createElement('h3');
+ text.className='section-title';
+ text.textContent=title;
+ heading.append(count,text);
+ section.append(heading);
+ return section;
+}
+function renderDetail(){
+ const n=byId(focus)||byId(root);
+ const detail=el('detail');
+ const hue=colorOf(n);
+ detail.style.setProperty('--detail-hue',hue);
+ const addButton=el('childAddBtn');
+ addButton.style.removeProperty('background');
+ const head=el('detailHeader');
+ head.replaceChildren();
+
+ const top=document.createElement('div');
+ top.className='panel-top';
+ const context=document.createElement('div');
+ context.className='panel-context';
+ const contextMark=document.createElement('span');
+ contextMark.className='panel-context-mark';
+ const contextLabel=document.createElement('span');
+ contextLabel.textContent='STUDY NOTE';
+ const courseLabel=document.createElement('span');
+ courseLabel.className='chapter-label';
+ courseLabel.textContent=n.id===root?'ADsP':(course(n)?.title||'ADsP');
+ context.append(contextMark,contextLabel,courseLabel);
+
+ const controls=document.createElement('div');
+ controls.className='panel-buttons';
+ const edit=document.createElement('button');
+ edit.className='icon-btn';
+ edit.textContent='✎';
+ edit.title='개념 수정';
+ edit.setAttribute('aria-label','개념 수정');
+ edit.onclick=()=>openEditor('edit',n.id);
+ controls.append(edit);
+ const parent=byId(n.parent);
+ if(parent){
+  const back=document.createElement('button');
+  back.className='icon-btn';
+  back.textContent='↶';
+  back.title='상위 개념 선택';
+  back.setAttribute('aria-label','상위 개념 선택');
+  back.onclick=()=>navigate(parent.id);
+  controls.append(back);
+ }
+ const hide=document.createElement('button');
+ hide.className='icon-btn mobile-close';
+ hide.textContent='×';
+ hide.title='설명 패널 닫기';
+ hide.setAttribute('aria-label','설명 패널 닫기');
+ hide.onclick=()=>{panelOpen=false;detail.classList.remove('mobile-open')};
+ controls.append(hide);
+ top.append(context,controls);
+ head.append(top);
+
+ const headingRow=document.createElement('div');
+ headingRow.className='detail-heading-row';
+ const glyph=document.createElement('div');
+ glyph.className='detail-icon';
+ glyph.textContent=n.icon||'✦';
+ glyph.setAttribute('aria-hidden','true');
+ const headingText=document.createElement('div');
+ headingText.className='detail-heading-copy';
+ const overline=document.createElement('div');
+ overline.className='detail-kicker';
+ overline.textContent=n.id===root?'데이터 분석 학습 지도':n.priority?'학습 우선순위 '+n.priority:'개념 노트';
+ const title=document.createElement('h2');
+ title.className='detail-title';
+ title.textContent=n.title;
+ headingText.append(overline,title);
+ headingRow.append(glyph,headingText);
+ head.append(headingRow);
+
+ const intro=document.createElement('p');
+ intro.className='detail-intro';
+ intro.textContent=n.short||'선택한 개념의 핵심 설명을 작성해 보세요.';
+ head.append(intro);
+
+ const scroll=el('detailScroll');
+ scroll.replaceChildren();
+ const contents=[
+  makeSection('개념 이해',n.detail,'01','definition-section'),
+  makeSection('실제 활용 사례',n.example,'02','example-section'),
+  makeSection('ADsP 시험 포인트',n.exam,'03','exam-section'),
+  makeSection('한 줄 암기',n.memory,'04','memory-section')
+ ];
+ contents.filter(Boolean).forEach(section=>scroll.append(section));
+
+ const related=links.filter(l=>l.a===n.id||l.b===n.id)
+  .map(l=>byId(l.a===n.id?l.b:l.a)).filter(Boolean);
+ const linkedSection=makeRelatedSection('관련 개념','05');
+ const chips=document.createElement('div');
+ chips.className='chip-list';
+ for(const item of related){
+  const chip=document.createElement('button');
+  chip.className='chip';
+  chip.textContent=(item.icon||'◉')+' '+item.title+' ↗';
+  chip.onclick=()=>navigate(item.id);
+  chips.append(chip);
+ }
+ const linkButton=document.createElement('button');
+ linkButton.className='soft-btn';
+ linkButton.textContent='＋ 다른 개념 연결';
+ linkButton.onclick=()=>openSearch('link');
+ chips.append(linkButton);
+ linkedSection.append(chips);
+ scroll.append(linkedSection);
+
+ const sub=children(n.id);
+ if(sub.length){
+  const childSection=makeRelatedSection('하위 개념 · '+sub.length+'개','06');
+  const childChips=document.createElement('div');
+  childChips.className='chip-list';
+  for(const item of sub){
+   const chip=document.createElement('button');
+   chip.className='chip';
+   chip.textContent=item.title+' ↗';
+   chip.onclick=()=>navigate(item.id);
+   childChips.append(chip);
+  }
+  childSection.append(childChips);
+  scroll.append(childSection);
+ }
  scroll.scrollTop=0;
 }
 
@@ -308,7 +458,7 @@ function navigate(id){
  focusMapNode(id);
 }
 function redraw(){renderMap();applyMapCamera()}
-const mapCamera={scale:1,x:0,y:0},MAP_ZOOM_MIN=.01,MAP_ZOOM_MAX=1;
+const mapCamera={scale:1,x:0,y:0},MAP_ZOOM_MIN=.01,MAP_ZOOM_MAX=1.5;
 let mapPointer=null;
 function applyMapCamera(){
  el('mapCamera').style.transform='translate3d('+mapCamera.x+'px,'+mapCamera.y+'px,0) scale('+mapCamera.scale+')';
