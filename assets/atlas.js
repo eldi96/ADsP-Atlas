@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const COLORS={root:'#92a3b6',a:'#879da6',b:'#9b95a8',c:'#8795ab',cyan:'#8b9dac',rose:'#a4919b',yellow:'#acaa92',blue:'#8299ac'};
+const COLORS={root:'#bfc8d3',a:'#aab9c5',b:'#c1b3bb',c:'#abb5c9',cyan:'#b5c5d2',rose:'#beabb5',yellow:'#c5c1af',blue:'#aabacd'};
 const defaultNodes=[];const defaultLinks=[];let number=0;
 function add(parent,title,icon,short,detail='',example='',exam='',memory='',priority='★★★',color=''){
  const p=defaultNodes.find(n=>n.id===parent);const id='n'+(++number);defaultNodes.push({id,parent,title,icon,short,detail,example,exam,memory,priority,color:color||(p?p.color:'root'),builtIn:true});return id;
@@ -198,16 +198,13 @@ function makeMindmapNode(n,p){
  btn.title=kidCount?(open?'클릭해서 가지 접기':'클릭해서 가지 펼치기'):'클릭해서 설명 보기';
  const ring=document.createElement('span');
  ring.className='node-ring';
- const glyph=document.createElement('span');
- glyph.className='glyph';
- glyph.textContent=n.icon||'✦';
  const title=document.createElement('span');
  title.className='node-name';
  title.textContent=n.title;
  const meta=document.createElement('span');
  meta.className='node-meta';
  meta.textContent=kidCount?(open?'− 접기':'＋ '+kidCount+'개 펼치기'):'개념 보기';
- btn.append(ring,glyph,title,meta);
+ btn.append(ring,title,meta);
  btn.addEventListener('click',()=>toggleConcept(n.id));
  el('nodes').append(btn);
 }
@@ -687,6 +684,92 @@ function openCloud(){
  const settings=document.createElement('div');settings.className='cloud-note';settings.style.marginTop='16px';settings.textContent='설정 변경 시 GitHub에 올리는 HTML에는 service_role 또는 secret 키를 절대로 넣지 마세요.';d.body.append(settings);
 }
 
+
+/* Width-resizable study pane (desktop). Saved as a proportional preference. */
+const DETAIL_RATIO_STORAGE='adsp-atlas-detail-panel-ratio-v1';
+const DETAIL_HANDLE_WIDTH=12;
+let panelResizeRaf=0;
+let detailRatio=.35;
+function readDetailRatio(){
+ try{
+  const saved=Number(localStorage.getItem(DETAIL_RATIO_STORAGE));
+  return Number.isFinite(saved)&&saved>=.2&&saved<=.8?saved:.35;
+ }catch(_){return .35}
+}
+function setDetailWidthPx(requested,persist=false){
+ const workspace=el('workspace')||document.querySelector('.workspace');
+ const grip=el('panelResizer');
+ if(!workspace||!grip)return;
+ const total=workspace.getBoundingClientRect().width;
+ if(total<=830)return;
+ const minimum=340, maximum=Math.max(minimum,total-320-DETAIL_HANDLE_WIDTH);
+ const px=Math.max(minimum,Math.min(maximum,Math.round(requested)));
+ detailRatio=px/total;
+ workspace.style.setProperty('--detail-width',px+'px');
+ const pct=Math.round(detailRatio*100);
+ grip.setAttribute('aria-valuenow',String(pct));
+ grip.setAttribute('aria-valuetext','설명 패널 '+pct+'퍼센트');
+ grip.setAttribute('aria-valuemin',String(Math.round(minimum/total*100)));
+ grip.setAttribute('aria-valuemax',String(Math.round(maximum/total*100)));
+ if(persist){
+  try{localStorage.setItem(DETAIL_RATIO_STORAGE,String(detailRatio))}catch(_){}
+ }
+ if(!panelResizeRaf){
+  panelResizeRaf=requestAnimationFrame(()=>{
+   panelResizeRaf=0;
+   redraw();
+  });
+ }
+}
+function initPanelResizer(){
+ const workspace=document.querySelector('.workspace'),grip=el('panelResizer');
+ if(!workspace||!grip)return;
+ detailRatio=readDetailRatio();
+ let dragging=null;
+ const refresh=()=>{
+  if(workspace.getBoundingClientRect().width>830)setDetailWidthPx(workspace.getBoundingClientRect().width*detailRatio,false);
+ };
+ refresh();
+ grip.addEventListener('pointerdown',event=>{
+  if(event.button!==0||workspace.getBoundingClientRect().width<=830)return;
+  event.preventDefault();
+  dragging={id:event.pointerId};
+  grip.setPointerCapture(event.pointerId);
+  document.body.classList.add('resizing-study-panel');
+ });
+ grip.addEventListener('pointermove',event=>{
+  if(!dragging||event.pointerId!==dragging.id)return;
+  const bounds=workspace.getBoundingClientRect();
+  setDetailWidthPx(bounds.right-event.clientX,true);
+ });
+ function finish(event){
+  if(!dragging||dragging.id!==event.pointerId)return;
+  dragging=null;
+  document.body.classList.remove('resizing-study-panel');
+  if(grip.hasPointerCapture(event.pointerId))grip.releasePointerCapture(event.pointerId);
+ }
+ grip.addEventListener('pointerup',finish);
+ grip.addEventListener('pointercancel',finish);
+ grip.addEventListener('lostpointercapture',event=>{
+  if(dragging&&dragging.id===event.pointerId){
+   dragging=null;
+   document.body.classList.remove('resizing-study-panel');
+  }
+ });
+ grip.addEventListener('dblclick',()=>setDetailWidthPx(workspace.getBoundingClientRect().width*.35,true));
+ grip.addEventListener('keydown',event=>{
+  if(workspace.getBoundingClientRect().width<=830)return;
+  const size=el('detail').getBoundingClientRect().width;
+  const increments={ArrowLeft:24,ArrowRight:-24,Home:-Infinity,End:Infinity};
+  if(!(event.key in increments))return;
+  event.preventDefault();
+  const shift=event.shiftKey?48:24;
+  const target=event.key==='Home'?0:event.key==='End'?workspace.clientWidth:size+Math.sign(increments[event.key])*shift;
+  setDetailWidthPx(target,true);
+ });
+ window.addEventListener('resize',refresh);
+}
+
 let toastTimer;function toast(msg){const t=el('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600)}
-function init(){load();initMapCamera();if(!localStorage.getItem(CLOUD_OWNER)&&localStorage.getItem(CLOUD_DIRTY)!=='1'&&cloudLocalLooksEdited()){localStorage.setItem(CLOUD_DIRTY,'1')}cloudDirty=localStorage.getItem(CLOUD_DIRTY)==='1';el('cloudBtn').onclick=openCloud;el('homeBtn').onclick=expandAllMindmap;el('searchBtn').onclick=()=>openSearch();el('dataBtn').onclick=openData;el('topAddBtn').onclick=()=>openEditor('add');el('childAddBtn').onclick=()=>openEditor('add');el('mobilePanelBtn').onclick=()=>{panelOpen=!panelOpen;el('detail').classList.toggle('mobile-open',panelOpen)};el('modal').addEventListener('click',e=>{if(e.target===el('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!el('modal').classList.contains('hidden'))closeModal();else if(panelOpen){panelOpen=false;el('detail').classList.remove('mobile-open')}else if(byId(focus)?.parent)navigate(byId(focus).parent)}if(e.key==='/'&&!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement)&&el('modal').classList.contains('hidden')){e.preventDefault();openSearch()}});let r;const observer=new ResizeObserver(()=>{clearTimeout(r);r=setTimeout(redraw,80)});observer.observe(el('mapArea'));renderMap();renderDetail();fitMapToContent();cloudInit();document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudRefresh()});window.addEventListener('online',()=>cloudRefresh());setInterval(()=>{if(!document.hidden)cloudRefresh()},30000)};init();
+function init(){load();initPanelResizer();initMapCamera();if(!localStorage.getItem(CLOUD_OWNER)&&localStorage.getItem(CLOUD_DIRTY)!=='1'&&cloudLocalLooksEdited()){localStorage.setItem(CLOUD_DIRTY,'1')}cloudDirty=localStorage.getItem(CLOUD_DIRTY)==='1';el('cloudBtn').onclick=openCloud;el('homeBtn').onclick=expandAllMindmap;el('searchBtn').onclick=()=>openSearch();el('dataBtn').onclick=openData;el('topAddBtn').onclick=()=>openEditor('add');el('childAddBtn').onclick=()=>openEditor('add');el('mobilePanelBtn').onclick=()=>{panelOpen=!panelOpen;el('detail').classList.toggle('mobile-open',panelOpen)};el('modal').addEventListener('click',e=>{if(e.target===el('modal'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!el('modal').classList.contains('hidden'))closeModal();else if(panelOpen){panelOpen=false;el('detail').classList.remove('mobile-open')}else if(byId(focus)?.parent)navigate(byId(focus).parent)}if(e.key==='/'&&!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement)&&el('modal').classList.contains('hidden')){e.preventDefault();openSearch()}});let r;const observer=new ResizeObserver(()=>{clearTimeout(r);r=setTimeout(redraw,80)});observer.observe(el('mapArea'));renderMap();renderDetail();fitMapToContent();cloudInit();document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudRefresh()});window.addEventListener('online',()=>cloudRefresh());setInterval(()=>{if(!document.hidden)cloudRefresh()},30000)};init();
 })();
