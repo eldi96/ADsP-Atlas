@@ -257,9 +257,6 @@ function renderMap(){
   if(p)makeMindmapNode(n,p);
  }
  const selected=byId(focus)||byId(root);
- el('sectionEyebrow').textContent=selected.id===root?'KNOWLEDGE MAP':'CONCEPT NETWORK';
- el('mapTitle').textContent=selected.id===root?'ADsP 개념 지도':selected.title;
- el('mapDescription').textContent=selected.id===root?'세 과목의 개념을 사방으로 확장해 학습하세요.':'연결 관계를 한 화면에서 탐색하고 정리하세요.';
  el('crumb').replaceChildren();
  const path=ancestors(selected.id);
  path.forEach((part,i)=>{
@@ -502,17 +499,22 @@ function initMapCamera(){
  const area=el('mapArea');
  area.addEventListener('wheel',e=>{
   if(e.target.closest('.map-controls,.mobile-detail-toggle'))return;
+  // Prevent the browser page zoom while the pointer is inside the map.
   e.preventDefault();
-  const multiplier=e.deltaMode===1?18:e.deltaMode===2?area.clientHeight:1;
-  const d=Math.max(-260,Math.min(260,e.deltaY*multiplier));
-  zoomMapAt(Math.exp(-d*.0036),e.clientX,e.clientY);
+  const multiplier=e.deltaMode===1?16:e.deltaMode===2?area.clientHeight:1;
+  const normalized=Math.max(-160,Math.min(160,e.deltaY*multiplier));
+  if(normalized===0)return;
+  const increment=Math.min(.05,Math.max(.002,Math.abs(normalized)*.0005));
+  const next=Math.max(MAP_ZOOM_MIN,Math.min(MAP_ZOOM_MAX,mapCamera.scale-Math.sign(normalized)*increment));
+  zoomMapAt(next/mapCamera.scale,e.clientX,e.clientY);
  },{passive:false,capture:true});
- function zoomCenter(factor){
+ function zoomCenter(delta){
   const a=area.getBoundingClientRect();
-  zoomMapAt(factor,a.left+a.width/2,a.top+a.height/2);
+  const next=Math.max(MAP_ZOOM_MIN,Math.min(MAP_ZOOM_MAX,Math.round((mapCamera.scale+delta)*100)/100));
+  zoomMapAt(next/mapCamera.scale,a.left+a.width/2,a.top+a.height/2);
  }
- el('zoomInBtn').onclick=()=>zoomCenter(1.4);
- el('zoomOutBtn').onclick=()=>zoomCenter(1/1.4);
+ el('zoomInBtn').onclick=()=>zoomCenter(.05);
+ el('zoomOutBtn').onclick=()=>zoomCenter(-.05);
  el('zoomResetBtn').onclick=fitMapToContent;
  area.addEventListener('pointerdown',e=>{
   if(mapPointer||e.button!==0||e.target.closest('button,a,input,textarea,select,.map-label,.map-controls,.legend'))return;
