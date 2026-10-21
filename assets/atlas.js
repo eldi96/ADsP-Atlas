@@ -313,6 +313,24 @@ for(const n of defaultNodes){
  if(match){(n.archivedMemoryNotes??=[]).push(n.memory.slice(match.index).trim());n.memory=n.memory.slice(0,match.index).trim();}
 }
 
+
+// ATLAS_CONTENT_REWRITE_2026: provide practical examples instead of reconstruction placeholders.
+const stage1BuiltIns=JSON.parse(JSON.stringify(defaultNodes));
+const learningExamples=[["분석 마스터플랜","이탈 예측→추천 시스템→실시간 개인화 서비스를 단계별 로드맵에 배치합니다.","단일 분석 과제와 전사적 중장기 마스터플랜을 구별합니다."],["데이터 거버넌스","모든 부서에 고객ID 명명 규칙과 접근 권한을 공통 적용합니다.","원칙·조직·프로세스를 구분하고 분석 알고리즘과 혼동하지 않습니다."],["R·전처리","구매기록의 NA·이상값을 확인하고 모델에 맞게 변수를 변환합니다.","전처리 기준은 훈련 데이터에서 정해 데이터 누출을 막습니다."],["가설검정","새 학습법을 적용한 학생의 평균이 기존과 다른지 검정합니다.","p값은 귀무가설이 참일 확률이 아닙니다."],["데이터베이스 4대 특성","은행 계좌 잔액을 저장하고 여러 창구에서 공유하며 거래에 따라 갱신합니다.","통합·저장·공용·변화는 작업 단계가 아닌 데이터 특성입니다."],["빅데이터의 패러다임 변화","쇼핑몰이 소수 설문에서 대규모 클릭 로그 분석으로 확장합니다.","전수·상관 활용 확대가 표본조사·인과추론의 소멸은 아닙니다."],["데이터 사이언티스트 역량","데이터 과제를 정의하고 분석한 후 담당자에게 결과와 한계를 설명합니다.","통계·코딩의 하드 스킬과 협업·설득의 소프트 스킬을 함께 봅니다."],["데이터 경제 3요소","스마트공장의 센서를 디지털화·연결하고 시스템 대응을 자동 조율합니다.","디지털화→연결성→에이전시를 구별합니다."],["주변·결합·조건부 확률","100명 중 사과 구매 40명·남성이며 구매 30명·남성 50명이면 확률은 0.4·0.3·0.6입니다.","조건부확률의 분모는 전체가 아닌 조건을 만족하는 집단입니다."],["분석 대상·방법 2×2","고객 이탈이라는 분석 대상·방법을 모두 알면 최적화, 대상만 알면 솔루션입니다.","대상·방법 인지 여부로 최적화·솔루션·통찰·발견을 구분합니다."],["데이터 분석 플랫폼","분석 엔진을 구축하고 API를 붙여 분석 결과를 업무 서비스에 제공합니다.","협의=분석 실행 기반, 광의=활용 서비스 계층 포함."],["분석 내재화·활용","분석에서 발견한 재고 주문 기준을 실제 발주 시스템의 규칙으로 적용합니다.","보고서 작성과 업무에 내재화하는 일은 다릅니다."],["정지규칙·가지치기","나무가 지나치게 깊으면 최대 깊이 제한을 두거나 자란 가지를 잘라냅니다.","사전 정지와 사후 가지치기를 구별합니다."],["회귀변수 선택법","매출 예측에서 광고비·날씨·매장 규모 중 기여가 큰 변수를 골라냅니다.","전진=추가, 후진=제거, 단계적=추가와 제거를 반복."],["신뢰구간","표본평균 70점·표준오차 2점이면 정규 근사 95% 구간은 대략 66.08~73.92점입니다.","95% 신뢰수준은 반복 표집에서 구간이 참모수를 포함하는 장기적 비율."],["연관규칙의 장단점","빵과 우유의 동시 구매 패턴은 찾기 쉽지만 품목 수가 많으면 후보가 급증합니다.","동시 출현은 인과관계를 보장하지 않습니다."],["Apriori 알고리즘","1개 품목부터 2개·3개 품목으로 자주 등장하는 조합을 확장합니다.","빈발하지 않은 집합의 상위집합도 빈발하지 않는다는 성질."],["일반화와 과적합","훈련정확도 99%·새 데이터 60%면 과적합을 의심합니다.","과소적합=둘 다 낮음, 과적합=훈련 높고 검증 낮음."],["주성분분석 PCA","서로 연관된 고객 행동변수 20개를 몇 개의 주성분으로 압축합니다.","PCA는 분산 보존 차원축소이지 군집 자체는 아닙니다."],["복원·비복원 추출","상자에서 공을 뽑아 다시 넣으면 복원, 다시 넣지 않으면 비복원입니다.","비복원추출은 뽑을수록 남은 모집단이 달라집니다."],["데이터 용량 단위","보안 로그 저장량의 GB·TB·PB 규모를 비교해 스토리지를 계획합니다.","SI 단위는 1000배, KiB·MiB 등 이진 접두어는 1024배. byte=8bit."],["업무 영역별 데이터 분석","마케팅=고객 이탈, 물류=재고, 인사=퇴사, 재무=현금흐름을 분석합니다.","업무 문제와 기법 선택을 연결합니다."],["정보 활용 관점","공공데이터를 저장·검색하게 만든 뒤 시민과 산업에 미치는 가치까지 평가합니다.","이용·관리·기술·사회경제 관점은 초점이 다릅니다."],["분석 기획 고려사항","고객 이탈 분석 시작 전 목표·대상·데이터 품질·기대 효과를 정의합니다.","모델링보다 문제의 가치·실현가능성 검토가 먼저입니다."],["빅데이터 분석 방법론 5단계","목표 정의→데이터 준비→분석→시스템 구축→평가·전개를 수행합니다.","기획·준비·분석·구현·평가/전개 5단계를 CRISP-DM 6단계와 구별."],["빅데이터 가치 측정의 어려움","배송 최적화로 모은 위치 데이터가 향후 안전 관리에도 재사용됩니다.","데이터 재사용·재조합으로 미래 가치는 미리 확정하기 어렵습니다."],["프로세스 기반 분석요건 도출","주문→결제→출고 프로세스에서 배송 지연 예측에 필요한 데이터를 정의합니다.","프로세스 분류→흐름 분석→요건 식별→정의."],["베이즈 정리","검사 전 유병률·검사 민감도를 이용해 양성 이후 질병 확률을 갱신합니다.","사전·우도·증거확률 구별; 사전과 사후만으로 우도가 항상 정해지지는 않음."],["표본추출 방법","학년별로 학생을 나눠 각 학년에서 무작위로 조사하면 층화추출입니다.","층화=모든 층, 집락=일부 집락, 계통=일정 간격."],["로지스틱 회귀·오즈비","이탈 여부를 로지스틱으로 예측해 구매 오즈의 변화를 추정합니다.","오즈=p/(1−p), 오즈비는 오즈의 비율이며 확률비와 다릅니다."],["다중공선성","월급과 연봉을 동시에 회귀설명변수로 넣으면 계수 추정이 불안정할 수 있습니다.","상관·VIF로 진단하고 중복변수 제거·Ridge 등을 고려."],["더미변수와 교호작용","직업을 0·1로 표시하고 나이×직업 항을 추가해 집단별 기울기 차이를 봅니다.","더미=범주 표현, 교호작용=한 변수 효과가 다른 변수에 따라 변함."],["상자그림","학급 시험점수의 중앙값·사분위범위·이상치를 상자로 표현합니다.","상자 중심선=중앙값, IQR=Q3−Q1, 수염은 정의에 따라 극단값 제외."],["중심극한정리","원점수 분포가 비대칭이어도 독립표본의 평균들을 반복 추출하면 정규분포에 가까워질 수 있습니다.","정규에 가까워지는 것은 모집단 자체가 아닌 표본평균의 분포."],["모수·비모수 검정","분포 가정이 부적합한 두 집단 점수는 Mann–Whitney U를 검토합니다.","모수는 분포 가정 활용, 비모수는 순위 등 사용. 항상 우월한 방법 없음."],["거리 척도","도로 격자 거리는 맨해튼, 직선거리는 유클리드, 공분산까지 반영하면 마할라노비스입니다.","유클리드=직선, 맨해튼=절댓값 합, 마할라노비스=공분산 고려."],["정상성·차분·로그변환","매출에 증가 추세가 보이면 차분을, 변동폭이 커지면 로그변환을 고려합니다.","차분은 추세 감소, 로그는 분산 안정화에 도움."],["데이터의 성격","온도 30도라는 사실은 데이터, 어제보다 5도 높다는 비교는 정보입니다.","데이터는 판단에 활용하기 전의 사실 기록이자 DIKW 출발점."],["엣지 컴퓨팅","센서가 촬영 위치에서 영상을 판별해 긴급 대응을 시작합니다.","엣지는 데이터 처리 위치, 상향식 분석은 과제 발굴 방법."],["시계열 모형 선택","매출 평균 추이는 ARIMA, 금융 변동성은 GARCH를 검토합니다.","ARIMA·GARCH·LSTM의 활용 목적을 구분하고 PCA는 차원축소로 이해."]];
+for(const [title,example,exam] of learningExamples){
+ const n=defaultNodes.find(n=>n.title===title);if(!n)throw Error('Unknown learning concept: '+title);
+ n.example=example;n.exam=exam;
+}
+for(const n of defaultNodes){
+ for(const field of ['short','detail'])if(typeof n[field]==='string'){
+  n[field]=n[field].replace(/^\d+회\s+(?:[\d·]+번|관련):\s*/,'');
+ }
+ if(typeof n.exam==='string'&&/^\d+회\s/.test(n.exam)){
+  (n.archivedExamNotes??=[]).push(n.exam);
+  n.exam=n.exam.replace(/^\d+회\s+(?:[\d·]+번|관련):\s*/,'');
+ }
+}
+
 let nodes=[],links=[],focus=root,modalMode='',editColor='root',panelOpen=false,transitioning=false,searchMode='navigate',oldFocus=root;
 const el=id=>document.getElementById(id);const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const byId=id=>nodes.find(n=>n.id===id);const children=id=>nodes.filter(n=>n.parent===id);const colorOf=node=>COLORS[node?.color]||COLORS.root;const byTitle=n=>n?.title||'';
@@ -320,18 +338,19 @@ const byId=id=>nodes.find(n=>n.id===id);const children=id=>nodes.filter(n=>n.par
 function mergeAtlasDefaults(doc){
  if(!doc||!Array.isArray(doc.nodes)||!Array.isArray(doc.links))return doc;
  const merged=JSON.parse(JSON.stringify(doc)),baseline=new Map(originalBuiltInNodes.map(n=>[n.id,n]));
+ const stage1=new Map(stage1BuiltIns.map(n=>[n.id,n]));
  const latest=new Map(defaultNodes.map(n=>[n.id,n])),known=new Map(merged.nodes.map(n=>[n.id,n]));
  for(const builtIn of defaultNodes)if(!known.has(builtIn.id)){
   const item=JSON.parse(JSON.stringify(builtIn));merged.nodes.push(item);known.set(item.id,item);
  }
  for(const node of merged.nodes){
   if(!node.builtIn||!latest.has(node.id))continue;
-  const old=baseline.get(node.id),next=latest.get(node.id);
+  const old=baseline.get(node.id),prior=stage1.get(node.id),next=latest.get(node.id);
   for(const field of ['title','icon','short','detail','example','exam','memory','priority','color']){
-   if(!old||node[field]===old[field]||node[field]===undefined)node[field]=next[field];
+   if(node[field]===old?.[field]||node[field]===prior?.[field]||node[field]===undefined)node[field]=next[field];
   }
   node.parent=next.parent;
-  for(const field of ['round39Evidence','round40Evidence','archivedStudyNodes','archivedMemoryNotes']){
+  for(const field of ['round39Evidence','round40Evidence','archivedStudyNodes','archivedMemoryNotes','archivedExamNotes']){
    if(next[field])node[field]=JSON.parse(JSON.stringify(next[field]));
   }
  }
