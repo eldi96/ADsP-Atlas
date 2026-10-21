@@ -68,7 +68,7 @@ html,body{background:#242426;color:#f4f4f7;font-family:-apple-system,BlinkMacSys
 .concept-crosslink{stroke:#babac3;stroke-width:1.5;opacity:.4;stroke-dasharray:6 10}
 /* Rectangular cards: dark canvas, light card, dark text. */
 .mind-node.node{position:absolute;pointer-events:auto;width:224px;height:112px;transform:translate(-50%,-50%);display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:18px 21px;border-radius:12px;border:1px solid #e9e9ed;background:#e3e4e8;color:#1c1e24;box-shadow:0 6px 21px rgba(0,0,0,.15);text-align:left;cursor:pointer;filter:none;transition:background .16s ease,scale .16s ease,box-shadow .16s ease;outline-offset:5px}
-.mind-node.node::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;border-radius:12px 0 0 12px;background:color-mix(in srgb,var(--hue) 75%,#747780)}
+.mind-node.node::before{content:none;display:none}
 .mind-node.node:hover{background:#f1f2f5;scale:1.035;z-index:5;box-shadow:0 8px 26px rgba(0,0,0,.22)}
 .mind-node.node:active{scale:.99}
 .mind-node.node.selected{background:#fff;border:2px solid #fff;box-shadow:0 0 0 3px #222326,0 0 0 5px #bbbcc6,0 9px 22px rgba(0,0,0,.18)}
@@ -130,6 +130,13 @@ html,body{background:#242426;color:#f4f4f7;font-family:-apple-system,BlinkMacSys
 .mind-node.node.card-dragging{cursor:grabbing!important;z-index:12!important;filter:drop-shadow(0 8px 12px rgba(0,0,0,.25))}
 .mind-node.node.card-dragging .node-ring{border-color:#b6b6c0!important}
 .concept-branch,.concept-crosslink{pointer-events:none}
+
+/* Minimal high-contrast card connectors */
+.mind-node.node::before{content:none!important;display:none!important}
+.concept-branch{stroke:#9799a3!important;stroke-width:1.65!important;opacity:.62!important;filter:none!important}
+.concept-crosslink{stroke:#777983!important;stroke-width:1.2!important;opacity:.48!important;stroke-dasharray:4 8!important}
+.mind-node.node{border-radius:12px;overflow:visible}
+.mind-node.node .node-name{color:#191a1f!important}
 </style>
 </head>
 <body>
@@ -444,19 +451,23 @@ function mapCard(n,p){
  el('nodes').append(btn);
 }
 function mapConnection(from,to,container,variant,color){
- // Attach to the nearest rectangle edges rather than drawing through their centers.
- const halfW=variant?110:115,halfH=56;
+ // Connect at the outside of each actual rectangle, not at the center.
+ // Neutral, low-contrast connectors reduce visual noise between text cards.
  function edgePoint(a,b){
+  const halfW=(a.id===focus?123:112),halfH=(a.id===focus?62:56);
   const dx=b.x-a.x,dy=b.y-a.y;
-  const t=1/Math.max(Math.abs(dx)/halfW,Math.abs(dy)/halfH,1e-9);
-  return {x:a.x+dx*t,y:a.y+dy*t};
+  const factor=1/Math.max(Math.abs(dx)/(halfW+4),Math.abs(dy)/(halfH+4),.000001);
+  return {x:a.x+dx*factor,y:a.y+dy*factor};
  }
  const fromEdge=edgePoint(from,to),toEdge=edgePoint(to,from);
  const dx=toEdge.x-fromEdge.x,dy=toEdge.y-fromEdge.y;
- const bend=Math.min(Math.abs(dx)*.42,170);
- // Low-curvature monotonic Bezier; avoids excessive S-loops in dense branches.
- const d='M '+fromEdge.x+' '+fromEdge.y+' C '+(fromEdge.x+Math.sign(dx)*bend)+' '+fromEdge.y+' '+(toEdge.x-Math.sign(dx)*bend)+' '+toEdge.y+' '+toEdge.x+' '+toEdge.y;
- makeSVG('path',{d,class:variant?'concept-crosslink':'concept-branch',stroke:color||'#a5a5af',fill:'none'},container);
+ const distance=Math.hypot(dx,dy);
+ if(distance<4)return;
+ const bend=Math.min(Math.abs(dx)*.32,95);
+ const d=Math.abs(dx)>32
+  ? 'M '+fromEdge.x+' '+fromEdge.y+' C '+(fromEdge.x+Math.sign(dx)*bend)+' '+fromEdge.y+' '+(toEdge.x-Math.sign(dx)*bend)+' '+toEdge.y+' '+toEdge.x+' '+toEdge.y
+  : 'M '+fromEdge.x+' '+fromEdge.y+' Q '+((fromEdge.x+toEdge.x)/2)+' '+((fromEdge.y+toEdge.y)/2)+' '+toEdge.x+' '+toEdge.y;
+ makeSVG('path',{d,class:variant?'concept-crosslink':'concept-branch',stroke:variant?'#777983':'#9799a3',fill:'none'},container);
 }
 function repaintMapConnections(){
  const edges=el('edges');edges.replaceChildren();
