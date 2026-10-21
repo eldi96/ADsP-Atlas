@@ -635,11 +635,11 @@ function repaintMapConnections(){
  edges.setAttribute('viewBox',[minX,minY,maxX-minX,maxY-minY].join(' '));
  for(const n of nodes){
   const pos=mapPositions.get(n.id),parent=mapPositions.get(n.parent);
-  if(pos&&parent)mapConnection(parent,pos,edges,false,colorOf(n));
+  if(pos&&parent)mapConnection({...parent,id:n.parent},{...pos,id:n.id},edges,false,colorOf(n));
  }
  for(const link of links){
   const a=mapPositions.get(link.a),b=mapPositions.get(link.b);
-  if(a&&b)mapConnection(a,b,edges,true,{a:link.a,b:link.b});
+  if(a&&b)mapConnection({...a,id:link.a},{...b,id:link.b},edges,true,{a:link.a,b:link.b});
  }
 }
 function renderMap(){
