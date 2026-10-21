@@ -150,6 +150,11 @@ html,body{background:#242426;color:#f4f4f7;font-family:-apple-system,BlinkMacSys
 #edges .concept-crosslink{pointer-events:none}
 #edges .concept-branch{pointer-events:none}
 
+.atlas-minimap{position:absolute;left:20px;bottom:54px;width:244px;padding:10px 11px 11px;z-index:8;border:1px solid #636570;border-radius:12px;background:#303137ed;box-shadow:0 8px 25px #1112164a;pointer-events:none}
+.atlas-minimap-label{display:flex;justify-content:space-between;align-items:center;color:#f1f1f4;font-size:11px;font-weight:720;padding:0 3px 7px}
+.atlas-minimap-label span{font-size:10px;font-weight:500;color:#8cc6f8}
+#atlasMiniSvg{display:block;width:100%;height:142px;background:#24252b;border:1px solid #444650;border-radius:7px;overflow:hidden}
+@media(max-width:600px){.atlas-minimap{left:10px;bottom:70px;width:170px;padding:7px}#atlasMiniSvg{height:105px}.atlas-minimap-label{font-size:10px}}
 </style>
 </head>
 <body>
@@ -170,6 +175,7 @@ html,body{background:#242426;color:#f4f4f7;font-family:-apple-system,BlinkMacSys
       <button class="mobile-detail-toggle" id="mobilePanelBtn">☰ 개념 설명</button>
       <div class="map-camera" id="mapCamera"><div class="map-viewport" id="viewport"><svg class="orbit-layer" id="orbits" aria-hidden="true"></svg><svg class="edge-layer" id="edges" aria-hidden="true"></svg><div id="nodes"></div></div></div>
       <div class="legend"><span>01&nbsp; 데이터 이해</span><span>02&nbsp; 분석 기획</span><span>03&nbsp; 데이터 분석</span></div>
+      <div class="atlas-minimap" id="atlasMinimap" aria-label="전체 마인드맵 미니맵"><div class="atlas-minimap-label">전체 위치 <span>현재 화면</span></div><svg id="atlasMiniSvg" viewBox="0 0 220 142" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg></div>
       <div class="map-controls" role="group" aria-label="마인드맵 확대 축소">
         <button id="zoomInBtn" type="button" aria-label="지도 확대">+</button>
         <button id="zoomResetBtn" type="button" class="zoom-level" aria-label="전체 지도에 맞추기"><span id="zoomLevel">100%</span></button>
@@ -643,6 +649,7 @@ function renderMap(){
  layer.replaceChildren();orbits.replaceChildren();edges.replaceChildren();
  repaintMapConnections();
  for(const n of nodes){const p=mapPositions.get(n.id);if(p)mapCard(n,p)}
+ redrawMinimap();
  el('crumb').replaceChildren();
  ancestors(focus).forEach((part,i)=>{
   if(i){const sep=document.createElement('span');sep.className='sep';sep.textContent='›';el('crumb').append(sep)}
@@ -651,9 +658,37 @@ function renderMap(){
   button.onclick=()=>navigate(part.id);el('crumb').append(button);
  });
 }
+
+function redrawMinimap(){
+ const svg=el('atlasMiniSvg'),area=el('mapArea');
+ if(!svg||!area||!mapPositions.size)return;
+ const positions=[...mapPositions.values()];
+ const minX=Math.min(...positions.map(p=>p.x))-160,maxX=Math.max(...positions.map(p=>p.x))+160;
+ const minY=Math.min(...positions.map(p=>p.y))-100,maxY=Math.max(...positions.map(p=>p.y))+100;
+ const w=220,h=142,pad=9;
+ const factor=Math.min((w-2*pad)/(maxX-minX),(h-2*pad)/(maxY-minY));
+ const offX=(w-(maxX-minX)*factor)/2,offY=(h-(maxY-minY)*factor)/2;
+ const sx=x=>offX+(x-minX)*factor,sy=y=>offY+(y-minY)*factor;
+ svg.replaceChildren();
+ const make=(tag,attrs)=>{const e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [key,val] of Object.entries(attrs))e.setAttribute(key,val);svg.append(e);return e};
+ for(const node of nodes){
+  const p=mapPositions.get(node.id),parent=mapPositions.get(node.parent);
+  if(!p||!parent)continue;
+  make('line',{x1:sx(parent.x),y1:sy(parent.y),x2:sx(p.x),y2:sy(p.y),stroke:'#666977','stroke-width':'.65',opacity:'.55'});
+ }
+ for(const p of positions)make('rect',{x:sx(p.x)-2.3,y:sy(p.y)-1.35,width:4.6,height:2.7,rx:'.7',fill:'#c7c8d0',opacity:'.9'});
+ const centerX=area.clientWidth/2,centerY=area.clientHeight/2;
+ const toWorldX=screen=>centerX+(screen-centerX-mapCamera.x)/mapCamera.scale;
+ const toWorldY=screen=>centerY+(screen-centerY-mapCamera.y)/mapCamera.scale;
+ const x1=sx(toWorldX(0)),x2=sx(toWorldX(area.clientWidth));
+ const y1=sy(toWorldY(0)),y2=sy(toWorldY(area.clientHeight));
+ make('rect',{x:Math.min(x1,x2),y:Math.min(y1,y2),width:Math.abs(x2-x1),height:Math.abs(y2-y1),fill:'#78b5e7','fill-opacity':'.19',stroke:'#8cc6f8','stroke-width':'1.75',rx:'1.5'});
+}
+
 function applyMapCamera(){
  el('mapCamera').style.transform='translate3d('+mapCamera.x+'px,'+mapCamera.y+'px,0) scale('+mapCamera.scale+')';
  el('zoomLevel').textContent=Math.round(mapCamera.scale*100)+'%';
+ redrawMinimap();
 }
 function zoomMapAt(next,clientX,clientY){
  next=zoomClamp(next);if(Math.abs(next-mapCamera.scale)<1e-7)return;
