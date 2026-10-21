@@ -143,6 +143,12 @@ html,body{background:#242426;color:#f4f4f7;font-family:-apple-system,BlinkMacSys
 .mind-node.connect-drop-target{outline:3px solid #dadade!important;outline-offset:5px;background:#fff!important}
 #connectionPreview{position:absolute;inset:0;z-index:8;pointer-events:none;overflow:visible}
 .map-area.connecting-concepts{cursor:crosshair}
+#edges{pointer-events:none}
+#edges .concept-link-hit{pointer-events:stroke;cursor:pointer;stroke-linecap:round}
+#edges .concept-link-hit:hover+.none{opacity:1}
+#edges .concept-crosslink{pointer-events:none}
+#edges .concept-branch{pointer-events:none}
+
 </style>
 </head>
 <body>
@@ -593,7 +599,23 @@ function mapConnection(from,to,container,variant,color){
  const d=Math.abs(dx)>32
   ? 'M '+fromEdge.x+' '+fromEdge.y+' C '+(fromEdge.x+Math.sign(dx)*bend)+' '+fromEdge.y+' '+(toEdge.x-Math.sign(dx)*bend)+' '+toEdge.y+' '+toEdge.x+' '+toEdge.y
   : 'M '+fromEdge.x+' '+fromEdge.y+' Q '+((fromEdge.x+toEdge.x)/2)+' '+((fromEdge.y+toEdge.y)/2)+' '+toEdge.x+' '+toEdge.y;
- makeSVG('path',{d,class:variant?'concept-crosslink':'concept-branch',stroke:variant?'#777983':'#9799a3',fill:'none'},container);
+ const visual=makeSVG('path',{d,class:variant?'concept-crosslink':'concept-branch',stroke:variant?'#777983':'#9799a3',fill:'none'},container);
+ if(variant&&color&&color.a&&color.b){
+  const titleA=byId(color.a)?.title||'',titleB=byId(color.b)?.title||'';
+  const hit=makeSVG('path',{d,class:'concept-link-hit',stroke:'transparent','stroke-width':'21',fill:'none','pointer-events':'stroke','aria-label':titleA+'와 '+titleB+' 연결 삭제'},container);
+  hit.setAttribute('tabindex','0');hit.setAttribute('role','button');
+  const removeLink=(event)=>{
+   event.preventDefault();event.stopPropagation();
+   if(!confirm('「'+titleA+'」 ↔ 「'+titleB+'」 연결을 삭제할까요?'))return;
+   links=links.filter(l=>!((l.a===color.a&&l.b===color.b)||(l.a===color.b&&l.b===color.a)));
+   save();repaintMapConnections();renderDetail();toast('연결을 삭제했습니다.');
+  };
+  hit.addEventListener('click',removeLink);
+  hit.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){removeLink(event)}});
+  hit.addEventListener('pointerdown',event=>event.stopPropagation());
+  visual.classList.add('removable-link');
+ }
+
 }
 function repaintMapConnections(){
  const edges=el('edges');edges.replaceChildren();
@@ -609,7 +631,7 @@ function repaintMapConnections(){
  }
  for(const link of links){
   const a=mapPositions.get(link.a),b=mapPositions.get(link.b);
-  if(a&&b)mapConnection(a,b,edges,true);
+  if(a&&b)mapConnection(a,b,edges,true,{a:link.a,b:link.b});
  }
 }
 function renderMap(){
