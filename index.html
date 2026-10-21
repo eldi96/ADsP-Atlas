@@ -124,6 +124,12 @@ html,body{background:#242426;color:#f4f4f7;font-family:-apple-system,BlinkMacSys
 .section-copy{font-size:15px;line-height:1.95;white-space:pre-line;word-break:keep-all;color:#ececf0}
 @media(max-width:520px){.chapter-label{font-size:18px!important}.section-heading{font-size:16px!important}}
 
+
+/* Manual mind-map arrangement: cards can be dragged without moving the canvas. */
+.mind-node.node{touch-action:none;cursor:grab!important;user-select:none;-webkit-user-select:none}
+.mind-node.node.card-dragging{cursor:grabbing!important;z-index:12!important;filter:drop-shadow(0 8px 12px rgba(0,0,0,.25))}
+.mind-node.node.card-dragging .node-ring{border-color:#b6b6c0!important}
+.concept-branch,.concept-crosslink{pointer-events:none}
 </style>
 </head>
 <body>
@@ -263,13 +269,37 @@ const cm=add(c8,'혼동행렬','⊞','분류 모델의 예측과 실제 정답�
 add(c8,'정확도·오분류율','◎','정확도는 맞힌 비율, 오분류율은 틀린 비율.','Accuracy=(TP+TN)/전체. Error Rate=(FP+FN)/전체=1−정확도.','전체 20건 중 틀린 것 13건 → 오분류율 13/20=0.65.','정확도와 오분류율은 합이 1.','오분류율 = 틀림/전체');
 add(c8,'정밀도·재현율','◉','정밀도는 양성 예측의 적중률, 재현율은 실제 양성을 찾아낸 비율.','Precision=TP/(TP+FP). Recall=TP/(TP+FN). F1=2PR/(P+R).','악성 탐지 알림 중 실제 악성 비율=정밀도, 전체 악성 중 잡은 비율=재현율.','정밀도 분모=예측 양성, 재현율 분모=실제 양성.','정밀도=예측 중 / 재현율=실제 중');
 add(c8,'특이도','◌','실제 음성을 음성으로 올바르게 판단한 비율입니다.','Specificity=TN/(TN+FP).','정상 로그인 중 정상으로 정확히 분류한 비율.','재현율은 실제 양성, 특이도는 실제 음성.','특이도 = TN/(TN+FP)');
+
+// Integrated ADsP study textbook: curated from 13 restoration-note sets; individual original options remain unverified.
+const studyEnhancements={"SECI 지식경영":["SECI 모델은 조직 내 지식이 사람 사이를 이동하고 새로운 지식으로 발전하는 과정을 설명하는 지식창출 이론입니다. 핵심은 개인의 머릿속 경험·감각 같은 암묵지와 매뉴얼·규칙·표처럼 명시적인 형식지가 서로 변환되는 것입니다. 직접 관찰하고 배우는 경험, 경험을 말과 문서로 표현하는 과정, 여러 문서를 결합하는 과정, 만들어진 매뉴얼을 실제로 연습하여 체득하는 과정이 순환할수록 조직의 지식이 축적됩니다. 단순 저장 기술이 아니라 조직의 학습과 공유 메커니즘을 설명합니다.","공통화(S): 암묵지→암묵지 · 함께 경험·관찰\n표출화(E): 암묵지→형식지 · 노하우 문서화\n연결화(C): 형식지→형식지 · 문서와 정보 통합\n내면화(I): 형식지→암묵지 · 실습으로 체득\n순서: 공통화→표출화→연결화→내면화"],"DIKW":["DIKW는 관찰된 사실이 어떻게 의사결정에 유용한 지혜로 바뀌는지 보여주는 계층적 사고 틀입니다. 데이터는 가공되지 않은 숫자나 기록이고, 정보는 맥락을 부여해 의미를 얻은 데이터입니다. 지식은 정보 사이의 패턴·원리·관계를 이해한 것이며, 지혜는 목적과 상황을 고려해 적절한 결정을 내리는 능력입니다. 각 단계는 단순히 데이터 양이 많아진다는 뜻이 아니라 해석과 활용의 수준이 달라지는 것입니다.","데이터(Data): 30℃\n정보(Information): 오늘 기온은 어제보다 5℃ 높다\n지식(Knowledge): 더운 날 냉음료 판매가 늘어나는 경향이 있다\n지혜(Wisdom): 오늘 냉음료 재고를 늘린다"],"분석 준비도":["분석 준비도는 조직이 데이터 분석을 제대로 수행할 수 있는 기반을 갖췄는지 평가하는 진단입니다. 실제로 분석을 얼마나 잘 활용하고 있는가를 묻는 성숙도와 구별해야 합니다. 전략과 분석 업무의 명확성, 담당할 조직과 사람, 사용할 기법, 충분한 데이터, 분석을 수용하는 문화, IT 인프라가 모두 영향을 줍니다. 준비도 결과로 분석 프로젝트를 시작하기 전에 무엇부터 보완할지 결정할 수 있습니다.","준비도 6영역: 분석 업무 / 인력·조직 / 분석 기법 / 분석 데이터 / 분석 문화 / IT 인프라\n준비도는 분석 수행 여건, 성숙도는 실제 활용 수준."],"분석 성숙도":["분석 성숙도는 조직이 데이터 분석을 실제 업무에서 어느 정도 체계적이고 넓게 활용하는지를 진단합니다. 일반적인 ADsP 학습 모형에서는 도입·활용·확산·최적화의 발전 단계로 구분합니다. 성숙도가 높다는 것은 도구를 많이 보유했다는 뜻보다 업무 전반에서 분석을 통해 개선과 혁신이 이루어지고 있음을 의미합니다. 준비도와 함께 보면 현재 역량과 필요한 투자의 방향을 파악할 수 있습니다.","도입→활용→확산→최적화\n도입: 시작 / 활용: 특정 업무 중심 / 확산: 조직 전반 확대 / 최적화: 분석 기반 지속 개선."],"가설검정":["가설검정은 모집단에 관한 주장에 대해 표본 자료가 얼마나 강한 반대 증거를 제시하는지 평가하는 절차입니다. 먼저 귀무가설 H₀와 대립가설 H₁을 정하고 검정통계량과 그 분포를 통해 p값을 계산합니다. p값은 H₀가 참이라고 가정했을 때 지금 관측한 결과 또는 더 극단적인 결과가 나올 가능성입니다. p값이 작으면 귀무가설을 기각할 근거가 됩니다. p값이 크다고 귀무가설이 참이라고 증명되는 것은 아닙니다.","p≤α: 귀무가설 기각 / p>α: 기각하지 못함\n제1종 오류: 실제 참인 H₀를 기각 / 제2종 오류: 실제 거짓인 H₀를 기각하지 못함.\n유의확률은 효과크기나 실무적 중요성과 다릅니다."],"회귀분석":["회귀분석은 하나 이상의 설명변수로 결과변수의 평균적 관계를 설명하거나 값을 예측하는 통계 방법입니다. 선형회귀의 계수는 다른 조건이 같을 때 설명변수가 한 단위 바뀌면 결과의 예측 평균이 어떻게 변하는지 나타냅니다. 잔차·결정계수·계수 유의성·다중공선성 등을 검토하여 모형을 해석합니다. 관찰자료의 회귀관계만으로 원인과 결과를 확정할 수는 없습니다.","단순선형회귀 ŷ=a+bX\n회귀계수 b: X 한 단위 변화에 따른 ŷ의 평균적 변화\nR²: 모형 설명력 / 잔차: 실제값−예측값 / VIF: 다중공선성 진단"],"연관분석":["연관분석은 거래나 사건 기록에서 둘 이상의 항목이 함께 나타나는 패턴을 발견합니다. 대표적인 장바구니 규칙 A→B는 A가 일어났을 때 B가 얼마나 자주 함께 나타나는지 서술하는 관계이지 원인을 뜻하지는 않습니다. 규칙은 지지도·신뢰도·향상도로 평가하고, Apriori나 FP-Growth로 빈발 항목을 찾을 수 있습니다.","지지도=동시 발생 건수/전체 거래\n신뢰도=동시 발생 건수/A 발생 건수\n향상도=신뢰도/P(B)\n향상도 >1: 양의 연관, =1: 독립 수준, <1: 음의 연관."],"모델 평가":["모델 평가는 학습에 쓴 데이터에서의 적합도가 아니라 새로운 데이터에서 모델이 목적에 맞게 작동하는지를 판단하는 과정입니다. 분류에는 혼동행렬·정밀도·재현율·ROC-AUC 등을 사용하고, 회귀에는 MAE·MSE·RMSE 등의 오차 지표가 쓰입니다. 클래스 불균형, 오탐과 미탐의 비용, 검증 데이터의 독립성에 따라 적합한 평가 지표가 달라집니다.","정확도=(TP+TN)/전체\n정밀도=TP/(TP+FP)\n재현율=TP/(TP+FN)\n특이도=TN/(TN+FP)\nF1=2PR/(P+R)\n평가는 데이터 누수·과적합을 경계해야 합니다."],"앙상블":["앙상블은 하나의 예측 모델에만 의존하지 않고 여러 모델의 결과를 결합하는 머신러닝 접근입니다. 배깅은 여러 표본에서 독립적으로 학습해 분산을 낮추고, 부스팅은 앞선 학습의 부족한 부분을 순차적으로 개선하며, 스태킹은 여러 모델의 예측을 입력받는 별도 메타 모델을 사용합니다. 서로 비슷한 모델을 늘린다고 반드시 좋아지는 것은 아니며 모델 간 다양성과 검증 방법이 중요합니다.","배깅: 독립 학습·병렬 결합 / 부스팅: 순차적으로 손실·오류 보완 / 스태킹: 메타 모델 학습.\n모든 부스팅이 오분류 샘플 가중치만 직접 높이는 것은 아닙니다."],"시계열분석":["시계열분석은 시간 순서로 관측된 자료의 구조를 분석하고 미래 값을 예측하는 방법입니다. 값들의 순서가 중요하며 추세, 계절성, 장기적인 순환, 예측하기 어려운 불규칙 변동을 구분합니다. 시점 간 의존성·정상성·차분 여부를 살펴 적절한 시계열 모형을 선택합니다.","추세: 장기적 상승·하락 / 계절: 일정 주기 반복 / 순환: 길이가 고정되지 않은 경기 변동 / 불규칙: 우연한 변동.\n정상성·ARIMA·차분을 함께 학습합니다."],"군집분석":["군집분석은 미리 정해진 정답 없이 데이터들을 특성의 유사성에 따라 여러 집단으로 묶습니다. 지도학습의 분류처럼 정답 범주를 예측하는 것이 아니라 데이터 내부의 구조를 탐색하는 비지도학습입니다. K-means는 중심과의 거리를, 계층적 군집은 순차적 결합 관계를, DBSCAN은 밀도를, 혼합분포군집은 확률적 소속을 활용합니다.","K-means: 중심 거리·K 미리 지정 / 계층적: 덴드로그램 / DBSCAN: 밀도·잡음 / 혼합분포·EM: 확률적 소속"]};
+for(const node of defaultNodes){const item=studyEnhancements[node.title];if(item){node.detail=item[0];node.exam=item[1];}}
+const studyLegacyContent={"DIKW":{"detail":"Data(사실) → Information(의미 부여) → Knowledge(패턴·규칙) → Wisdom(판단·활용).","exam":"데이터·정보·지식·지혜의 순서 및 차이."},"SECI 지식경영":{"detail":"암묵지: 경험으로 습득한 노하우. 형식지: 문서·매뉴얼 등으로 표현된 지식. SECI는 공통화→표출화→연결화→내면화 순서입니다.","exam":"4단계 방향을 정확히 암기하세요."},"분석 준비도":{"detail":"6영역: 분석 업무 파악, 분석 인력·조직, 분석 기법, 분석 데이터, 분석 문화, IT 인프라.","exam":"준비도는 6개 평가 영역."},"분석 성숙도":{"detail":"도입 → 활용 → 확산 → 최적화의 4단계. 3개 평가 부문은 비즈니스, 조직·역량, IT입니다.","exam":"성숙도=4단계, 평가 부문=3가지."},"가설검정":{"detail":"귀무가설(H0)은 기본 가정, 대립가설(H1)은 입증하고 싶은 주장. p값과 유의수준 α를 비교해 판단합니다.","exam":"일반적으로 p ≤ α면 귀무가설 기각."},"회귀분석":{"detail":"단순선형회귀: Y=a+bX. b는 X가 1단위 증가할 때 예측 Y의 변화량. 관계가 있다고 바로 인과를 뜻하지는 않습니다.","exam":"단순=독립변수 1개, 다중=2개 이상."},"시계열분석":{"detail":"추세·계절·순환·불규칙 요인으로 시계열을 분해할 수 있습니다.","exam":"계절과 순환의 주기 특성을 구별."},"군집분석":{"detail":"분할적 군집(K-means), 계층적 군집, 밀도 기반(DBSCAN), 혼합분포군집 등이 있습니다.","exam":"분류와 달리 그룹 정답이 주어지지 않음."},"연관분석":{"detail":"장바구니 분석에서 Apriori, FP-Growth를 이용하며 지지도·신뢰도·향상도를 평가합니다.","exam":"연관=함께 등장 / 군집=비슷한 것끼리."},"앙상블":{"detail":"배깅은 여러 모델을 독립 학습, 부스팅은 오류를 보완하며 순차 학습, 스태킹은 예측 결과를 다시 학습합니다.","exam":"K-means와 KNN은 앙상블 자체가 아님."},"모델 평가":{"detail":"혼동행렬의 TP·TN·FP·FN으로 정확도·오분류율·정밀도·재현율·특이도 등을 계산합니다.","exam":"오분류율=1−정확도, 정밀도·재현율의 분모 차이."}};
+const studyNewConcepts=[{"parent":"데이터의 유형","title":"정형·반정형·비정형","short":"데이터가 저장되고 구조화된 방식을 구별하는 분류입니다.","detail":"정형 데이터는 표·스키마처럼 일정한 구조가 있고, 반정형은 JSON·XML처럼 항목을 구분하는 키와 태그가 있으나 고정된 관계형 테이블 구조가 필수는 아닙니다. 비정형은 본문·이미지·음성처럼 정해진 스키마 없이 표현됩니다. 정성·정량 분류는 값의 성격, 정형·비정형 분류는 저장 구조의 성격이므로 두 축을 동일시하면 안 됩니다.","exam":"정형: 관계형 테이블 / 반정형: JSON·XML·일부 로그 / 비정형: 이미지·자유서술. 로그도 형식에 따라 정형 또는 반정형이 될 수 있습니다.","example":"웹 서비스는 주문내역(SQL), API 응답(JSON), 고객 문의 글(텍스트)을 함께 분석합니다.","priority":"★★★"},{"parent":"데이터베이스","title":"데이터베이스 4대 특성","short":"통합·저장·운영·공용 데이터를 말합니다.","detail":"통합 데이터는 중복을 통제하여 일관성을 유지하고, 저장 데이터는 컴퓨터 매체에 기록됩니다. 운영 데이터는 조직의 업무에 실제 사용되어 지속적으로 갱신되며, 공용 데이터는 여러 사용자와 업무가 함께 사용할 수 있도록 관리됩니다.","exam":"통합(중복 통제) / 저장(기록) / 운영(업무 활용·갱신) / 공용(공동 사용). 운영 데이터는 고정 데이터와 다릅니다.","example":"쇼핑몰의 주문 DB를 고객지원·물류·정산팀이 공용으로 활용합니다.","priority":"★★★"},{"parent":"데이터베이스","title":"데이터 독립성","short":"데이터 구조의 변화가 프로그램에 미치는 영향을 줄이는 설계 원칙입니다.","detail":"물리적 독립성은 저장 장치·인덱스 등의 변경이 논리 구조에 미치는 영향을 줄이는 성질이고, 논리적 독립성은 개념 스키마 변경이 외부 뷰·응용 프로그램에 미치는 영향을 줄이는 성질입니다. 어떠한 변경에도 영향이 전혀 없다는 뜻은 아닙니다.","exam":"물리적: 내부 스키마 변경 → 개념 스키마 영향 최소화 / 논리적: 개념 스키마 변경 → 외부 스키마 영향 최소화.","example":"데이터 파일을 다른 디스크로 옮겨도 고객 조회 기능을 바꾸지 않도록 구성합니다.","priority":"★★★"},{"parent":"데이터베이스","title":"OLTP·OLAP","short":"운영 거래 처리와 분석용 처리를 구별합니다.","detail":"OLTP는 일상적인 주문·입금·재고 갱신처럼 짧고 빈번한 트랜잭션을 신속·정확하게 처리합니다. OLAP은 여러 기간과 관점에서 집계·비교·추세를 탐색해 의사결정을 지원합니다. 각각의 시스템은 운영 목적과 최적화 방향이 다릅니다.","exam":"OLTP=거래·갱신 중심 / OLAP=분석·집계 중심. OLTP를 대규모 다차원 분석만의 기술로 설명하면 틀립니다.","example":"주문 결제는 OLTP, 월별 매출과 지역별 상품 분석은 OLAP을 활용합니다.","priority":"★★★"},{"parent":"빅데이터 3V·4V","title":"빅데이터 활용 3요소","short":"데이터·기술·인력의 조합이 있어야 분석 가치가 생깁니다.","detail":"충분하고 적절한 데이터만으로는 성과를 보장할 수 없습니다. 대용량 자료를 수집·처리할 기술, 문제를 정의하고 결과를 해석할 인력과 역량이 함께 필요합니다. 실제 조직에서는 절차와 윤리·보안도 중요하지만 시험에서 자주 쓰는 기본 3요소와 구분합니다.","exam":"데이터 / 기술 / 인력. 활용 요소와 3V·4V(데이터 특성)를 혼동하지 않습니다.","example":"쇼핑몰 데이터를 수집하고 분산처리 도구로 분석하며 담당자가 캠페인에 적용합니다.","priority":"★★★"},{"parent":"빅데이터 3V·4V","title":"가치 패러다임 변화","short":"디지털화에서 연결, 지능형 대리·자동화로 확장되는 관점입니다.","detail":"디지털화는 기존 업무와 정보를 전산 데이터로 바꾸는 단계이고, 연결은 다양한 데이터·사람·사물의 정보가 결합되어 새 가치를 만드는 단계입니다. 에이전시는 연결된 데이터를 바탕으로 시스템이 추천·판단·대리 행동을 수행하는 단계입니다.","exam":"디지털화 → 연결 → 에이전시(Agency). 3V·4V 특성과는 서로 다른 분류입니다.","example":"종이 영수증 전산화 → 구매·재고 정보 연결 → 자동 재고 발주 추천으로 발전합니다.","priority":"★★★"},{"parent":"빅데이터 위기","title":"가명처리·익명화","short":"개인정보 활용 위험을 줄이는 서로 다른 처리 개념입니다.","detail":"가명처리는 추가 정보 없이는 개인을 알아볼 수 없도록 처리하지만 재식별 가능성을 완전히 제거하지 않습니다. 익명처리는 합리적으로 고려할 수 있는 수단을 이용하더라도 더 이상 개인을 알아볼 수 없도록 하는 것을 목표로 합니다. 기술적 처리뿐 아니라 결합 위험과 최신 법적 요건을 함께 고려해야 합니다.","exam":"가명정보는 개인정보 보호 법령상 일정한 조건에서 여전히 개인정보입니다. 익명정보와 동일하다고 쓰면 부정확합니다.","example":"고객 ID를 별도 키로 대체해 통계를 만들고 재식별 가능성을 평가합니다.","priority":"★★★"},{"parent":"데이터 사이언스","title":"하드스킬·소프트스킬","short":"데이터를 분석하는 기술과 결과를 실제 업무로 연결하는 역량입니다.","detail":"하드스킬은 통계, 수학, 프로그래밍, 분석 알고리즘, 데이터 처리 같은 기술적 전문성입니다. 소프트스킬은 문제 정의, 의사소통, 협업, 비판적 사고, 스토리텔링 등 실무 상황에서 지식을 활용하고 설득하는 능력입니다. 데이터 시각화는 기술 구현과 전달 역량이 함께 작용할 수 있습니다.","exam":"하드=분석 기술 / 소프트=문제해결·협업·전달. 모든 항목이 둘 중 하나에 배타적으로 속하는 것은 아닙니다.","example":"분석가가 고객 이탈 모형을 만들고 담당자에게 비용·효과를 설명합니다.","priority":"★★★"},{"parent":"데이터 사이언스","title":"기업 정보시스템","short":"기업 업무 목적에 따라 서로 다른 정보를 수집·활용합니다.","detail":"CRM은 고객 관계와 구매 이력, ERP는 재무·인사·물류 등 전사 자원, SCM은 공급망과 제품 흐름을 관리하는 시스템입니다. 이름보다 관리 대상과 업무 목적을 기준으로 구분해야 합니다.","exam":"CRM=고객 관계 / ERP=기업 자원 / SCM=공급망.","example":"고객별 구매 이력으로 재구매 캠페인을 설계할 때 CRM 자료를 사용합니다.","priority":"★★★"},{"parent":"과제 발굴 방식","title":"분석 주제 4분면","short":"분석 대상과 분석 방법을 알고 있는지에 따라 네 가지 과제로 나뉩니다.","detail":"과제가 무엇을 분석하는지(대상)를 아는지와 어떤 방법으로 해결할지(방법)를 아는지를 두 축으로 구분합니다. 최적화는 대상·방법을 모두 알고 있고, 솔루션은 대상은 알지만 방법이 불확실합니다. 통찰은 방법은 있으나 어떤 문제에 쓸지 탐색하며, 발견은 대상과 방법을 모두 탐색하는 경우입니다.","exam":"대상 O·방법 O=최적화 / O·X=솔루션 / X·O=통찰 / X·X=발견.","example":"매출 예측 대상과 알고리즘이 정해져 있다면 최적화형 분석 과제입니다.","priority":"★★★"},{"parent":"과제 우선순위","title":"분석 과제 난이도·가치","short":"가치와 실현 가능성을 함께 고려해 수행 순서를 정합니다.","detail":"분석 과제를 비교할 때 예상 비즈니스 효과만이 아니라 데이터 확보, 기술 난이도, 비용, 조직 역량, 적용 시급성도 평가합니다. 가치가 높더라도 실행할 수 없는 과제보다 먼저 구축 가능한 과제를 선택할 수 있습니다.","exam":"비즈니스 가치와 실행 난이도는 서로 다른 평가축입니다.","example":"적은 비용으로 이탈 고객을 조기 탐지하는 과제를 우선 추진합니다.","priority":"★★★"},{"parent":"데이터 거버넌스","title":"데이터 품질관리","short":"데이터가 목적에 맞게 정확하고 일관되게 사용되도록 관리합니다.","detail":"품질관리는 단순한 오류 검사가 아니라 요구 수준·기준을 정하고 측정·점검·개선하는 전 과정입니다. 정확성, 완전성, 일관성, 유효성, 적시성 등 데이터의 특성을 업무 맥락에 맞게 판단합니다.","exam":"정확성(값이 맞는가) / 완전성(빠짐없는가) / 일관성(서로 모순 없는가) / 적시성(제때 최신인가).","example":"여러 지점 고객 주소 데이터의 누락과 표기 불일치를 주기적으로 점검합니다.","priority":"★★★"},{"parent":"분석 성숙도","title":"분석 조직 유형","short":"분석 전담 조직을 어떤 방식으로 운영하는지에 따른 구조입니다.","detail":"집중형은 전문 인력을 한곳에 모아 분석 역량을 축적하기 좋지만 현업 적용과 소통이 늦을 수 있습니다. 기능형은 개별 부서가 각자 분석하여 현업 밀착에 유리하지만 중복과 표준화 문제가 생기기 쉽습니다. 분산형은 중앙 분석 조직과 현업 부서에 분석 인력을 배치해 장점을 결합하려는 구조입니다.","exam":"집중형=중앙 전담 / 기능형=각 부서 독자 / 분산형=중앙과 현업 연계. 조직 유형 명칭은 교재 정의를 함께 확인합니다.","example":"고객·물류 부서에 분석 인력을 배치하되 공통 분석 표준은 중앙에서 관리합니다.","priority":"★★★"},{"parent":"기초통계","title":"왜도·첨도","short":"분포의 비대칭성과 꼬리·뾰족함 등의 모양을 요약합니다.","detail":"왜도는 분포가 어느 방향으로 비대칭인지 측정하는 통계량입니다. 양의 왜도는 오른쪽 꼬리가 길고 음의 왜도는 왼쪽 꼬리가 긴 경향을 나타냅니다. 첨도는 정규분포와 비교한 꼬리의 두꺼움 등 분포 모양에 관련됩니다. 표본이 달라지면 평균·중앙값·최빈값 순서는 항상 고정되지 않습니다.","exam":"양의 왜도=오른쪽 긴 꼬리 / 음의 왜도=왼쪽 긴 꼬리. 평균>중앙값이라는 조건만으로 모든 분포의 왜도를 확정할 수는 없습니다.","example":"대부분은 소액 구매하지만 일부 초고액 주문이 있는 매출 분포는 오른쪽 꼬리가 길 수 있습니다.","priority":"★★★"},{"parent":"기초통계","title":"표본추출·표준오차","short":"표본에서 추정한 값이 얼마나 흔들리는지 설명합니다.","detail":"표본평균은 표본을 다시 뽑을 때마다 달라지며, 그 분포의 표준편차를 표준오차(SE)라고 합니다. 모집단 표준편차가 σ이고 독립·동일분포 표본 크기가 n이면 표본평균 표준오차는 σ/√n입니다. 복원·비복원 추출 여부와 유한모집단 조건에 따라 보정이 필요할 수 있습니다.","exam":"표준편차=개별 관측값의 변동 / 표준오차=추정량의 표본 간 변동. n이 4배가 되면 표준오차는 대체로 1/2배.","example":"설문 표본 100명과 400명일 때 평균 추정의 불확실성을 비교합니다.","priority":"★★★"},{"parent":"확률·분포","title":"조건부확률·베이즈 정리","short":"어떤 사건을 알고 난 뒤 다른 사건의 확률을 갱신합니다.","detail":"조건부확률 P(A|B)=P(A∩B)/P(B)이며 P(B)>0이어야 합니다. 베이즈 정리는 P(A|B)=P(B|A)P(A)/P(B)로, 사전확률에 관측 자료의 가능도를 반영해 확률을 갱신합니다. 독립사건이라면 P(A|B)=P(A)입니다.","exam":"P(A|B)와 P(B|A)는 일반적으로 같지 않습니다. 확률의 분모와 조건을 확인합니다.","example":"보안 경보가 발생했을 때 실제 계정 탈취일 확률을 기본 발생률과 탐지 정확도로 갱신합니다.","priority":"★★★"},{"parent":"가설검정","title":"신뢰구간","short":"표본으로 모수를 추정할 때 불확실성을 범위로 표현합니다.","detail":"95% 신뢰구간은 같은 표집과 계산 절차를 매우 많이 반복하면 만들어지는 구간 중 약 95%가 참 모수를 포함한다는 뜻입니다. 고정된 한 구간이 참 모수를 95% 확률로 포함한다고 해석하는 빈도주의 설명은 부정확합니다.","exam":"대표 형태: 추정치 ± 임계값×표준오차. 신뢰수준 95%와 p값 0.05는 같은 의미가 아닙니다.","example":"고객 평균 구매금액을 5만 원으로 추정하며 오차 범위를 제시합니다.","priority":"★★★"},{"parent":"가설검정","title":"t검정·대응표본","short":"평균 차이가 우연한 표본 변동으로 설명될 수 있는지 검정합니다.","detail":"일표본 t검정은 한 집단의 평균이 특정 기준과 다른지, 독립표본 t검정은 독립인 두 집단의 평균을 비교하며, 대응표본 t검정은 동일 대상의 전후처럼 짝을 이룬 관측값의 차이를 비교합니다. 독립표본의 분산이 같다고 가정하지 않을 때는 Welch t검정이 유용합니다.","exam":"일표본 / 독립표본 / 대응표본을 구분. 대응표본은 관측치의 짝이 핵심이며 두 집단 이름만 보고 판단하지 않습니다.","example":"같은 학생의 교육 전·후 시험 점수 차이는 대응표본 t검정으로 분석합니다.","priority":"★★★"},{"parent":"가설검정","title":"모수·비모수 검정","short":"분포에 대한 가정과 데이터 특성에 따라 검정 방법을 선택합니다.","detail":"모수검정은 모집단 분포나 모수 구조에 대한 가정을 활용하고, 비모수검정은 순위·부호 등을 이용해 비교적 약한 분포 가정으로 분석하는 방법이 많습니다. 표본 수가 작다는 이유만으로 무조건 비모수검정을 선택하는 것은 아닙니다.","exam":"정규성·독립성·측정 척도·연구 목적 확인. 대응표본 비모수 예: Wilcoxon 부호순위 검정.","example":"극단값이 많고 서열척도인 만족도 점수를 비교할 때 순위 기반 검정을 고려합니다.","priority":"★★★"},{"parent":"회귀분석","title":"결정계수 R²","short":"회귀모형이 종속변수 변동을 얼마나 설명하는지 보여주는 지표입니다.","detail":"보통 절편이 포함된 최소제곱 선형회귀에서 R²=1−SSE/SST로, 전체 변동 중 모형이 설명한 비중을 나타냅니다. 독립변수를 추가하면 일반적으로 R²가 감소하지 않으므로 변수가 많은 모형 비교에는 수정 결정계수를 함께 검토합니다.","exam":"R²가 높아도 인과관계가 증명되거나 미래 예측 성능이 반드시 좋다는 뜻은 아닙니다.","example":"시험 성적에서 공부시간을 사용한 회귀모형의 설명력을 확인합니다.","priority":"★★★"},{"parent":"회귀분석","title":"잔차·MSE·RMSE","short":"관측값과 예측값의 차이로 회귀모형을 진단합니다.","detail":"잔차 eᵢ=yᵢ−ŷᵢ입니다. 잔차 패턴은 선형성·등분산성·이상치 문제를 발견하는 데 도움을 줍니다. 예측 평가 지표 MSE는 보통 오차 제곱의 평균(1/n)Σ(y−ŷ)²이며, 회귀 오차분산의 불편추정량은 잔차제곱합을 자유도(n−p)로 나눈 MS_error입니다. 둘의 분모는 문맥에 따라 다릅니다.","exam":"MSE(예측오차 평균)와 ANOVA 회귀 잔차평균제곱(MS_error)을 혼동하지 않습니다. RMSE=√MSE.","example":"아파트 가격 예측에서 실제 가격과 예측 가격의 차이를 분석합니다.","priority":"★★★"},{"parent":"회귀분석","title":"다중공선성·VIF","short":"독립변수끼리 강하게 관련되어 회귀계수 추정이 불안정해지는 현상입니다.","detail":"다중공선성은 설명변수들 사이의 높은 선형관계 때문에 회귀계수의 표준오차가 커지고 개별 영향력을 구분하기 어려워지는 문제입니다. VIF=1/(1−R²ⱼ)는 j번째 설명변수를 나머지 설명변수로 회귀했을 때의 결정계수로 계산합니다.","exam":"VIF=1이면 해당 선형 중복이 없고, 값이 클수록 다중공선성 가능성이 큽니다. 5·10 등의 기준은 상황별 경험적 기준이지 절대 법칙은 아닙니다.","example":"광고비와 노출수가 거의 같이 움직일 때 변수별 회귀계수가 불안정해질 수 있습니다.","priority":"★★★"},{"parent":"회귀분석","title":"로지스틱 회귀·오즈비","short":"범주형 결과의 확률을 추정하는 회귀 기반 분류기법입니다.","detail":"이진 로지스틱 회귀는 확률 p의 로짓 log[p/(1−p)]을 독립변수의 선형결합으로 표현합니다. 회귀계수 β를 지수화한 exp(β)는 다른 조건이 같을 때 해당 변수 1단위 증가에 따른 오즈의 배수를 뜻합니다. 확률 자체가 같은 배수로 변한다는 뜻은 아닙니다.","exam":"연결함수=로짓 / 역연결함수=시그모이드. exp(β)=오즈비(OR).","example":"로그인 위험요인의 변화가 계정 탈취 가능성의 오즈에 어떻게 관련되는지 해석합니다.","priority":"★★★"},{"parent":"분산분석 ANOVA","title":"F검정·사후검정","short":"여러 집단의 평균 차이를 분산비로 검정합니다.","detail":"분산분석은 집단 간 변동과 집단 내 변동을 비교하며 F=MS_between/MS_within을 사용합니다. 유의한 F검정은 적어도 한 집단 평균이 다를 수 있다는 근거이지 어느 집단끼리 다른지까지 말해주지 않습니다. 이때 사후검정으로 쌍별 비교를 합니다.","exam":"F통계량이 크면 집단 간 차이의 근거가 커질 수 있습니다. 다중비교를 할 때는 오류율 보정이 필요합니다.","example":"세 가지 광고 캠페인의 평균 매출 차이가 있는지 검정합니다.","priority":"★★★"},{"parent":"시계열분석","title":"정상성·차분","short":"시간에 따라 통계적 성질이 크게 바뀌지 않도록 시계열을 다룹니다.","detail":"약정상성은 평균과 분산이 시점에 의존하지 않고 자기공분산이 시간 차이에만 의존하는 성질입니다. 추세가 있는 시계열은 차분으로 변화량을 분석하여 정상성을 개선할 수 있습니다. 로그 변환은 주로 분산 안정화에 도움을 줄 수 있으나 추세를 자동으로 제거하지는 않습니다.","exam":"1차 차분 Δyₜ=yₜ−yₜ₋₁. 로그 변환과 차분의 목적을 구분합니다.","example":"꾸준히 증가하는 일별 가입자 수에서 전날 대비 변화량을 분석합니다.","priority":"★★★"},{"parent":"시계열분석","title":"ARIMA 모형","short":"자기회귀·차분·이동평균을 결합한 시계열 예측 모형입니다.","detail":"ARIMA(p,d,q)는 AR(자기회귀) 차수 p, 차분 횟수 d, MA(이동평균) 차수 q로 구성됩니다. 과거 값과 예측오차의 구조를 이용하며, 차분을 통해 비정상 시계열을 정상에 가깝게 만든 뒤 모형화합니다. 단, 모든 시계열에 ARIMA가 최선은 아닙니다.","exam":"p=AR 차수 / d=차분 차수 / q=MA 차수. 단순 이동평균 평활화와 MA 확률과정은 개념이 다릅니다.","example":"지난 2년의 월별 매출을 사용해 다음 달 매출을 예측합니다.","priority":"★★★"},{"parent":"군집분석","title":"군집 개수·덴드로그램","short":"계층적 군집을 나무 모양 도표로 해석합니다.","detail":"덴드로그램은 관측값 또는 군집들이 어떤 거리에서 합쳐지는지 보여줍니다. 특정 높이에 수평선을 그었을 때 잘리는 가지 수가 그 기준에서의 군집 수가 됩니다. 그림에 수평 기준이 없다면 군집 개수를 하나로 고정할 수 없습니다.","exam":"거리와 결합 높이, 자르는 위치를 함께 확인합니다. 원본 그림이 누락되면 정답을 단정하지 않습니다.","example":"고객을 유사도에 따라 순차적으로 묶고 적절한 군집 수를 탐색합니다.","priority":"★★★"},{"parent":"모델 평가","title":"ROC·AUC","short":"분류 임계값을 바꿀 때 탐지율과 오탐률의 관계를 평가합니다.","detail":"ROC는 가로축 FPR=FP/(FP+TN), 세로축 TPR=TP/(TP+FN)을 그린 곡선입니다. AUC는 ROC 아래 면적으로, 점수가 임의의 양성 샘플을 음성보다 높게 순위 매길 가능성과 관련됩니다. 정확도 하나로 모든 임계값의 성능을 판단하지 않도록 도와줍니다.","exam":"ROC의 세로축=재현율, 가로축=1−특이도. AUC가 높아도 실제 적용 임계값·비용을 검토해야 합니다.","example":"이상 로그인 탐지 임계값을 조절하며 탐지율과 오탐률의 균형을 비교합니다.","priority":"★★★"},{"parent":"모델 평가","title":"교차검증·홀드아웃","short":"학습 데이터 바깥에서도 모델이 잘 작동하는지 평가합니다.","detail":"홀드아웃은 학습·검증·시험 데이터를 분리하는 방법입니다. K겹 교차검증은 학습 데이터를 K개 구간으로 나누어 각 구간을 차례로 검증에 사용합니다. 데이터 누수 방지를 위해 전처리의 학습도 각 훈련 구간 내부에서 해야 합니다.","exam":"홀드아웃·교차검증은 성능 추정과 모형 선택에 도움을 주지만 과적합을 자동으로 제거하는 마법 같은 기법은 아닙니다.","example":"고객 이탈 데이터를 5개 폴드로 나눠 여러 후보 모형의 평균 성능을 비교합니다.","priority":"★★★"},{"parent":"모델 평가","title":"과적합·편향·분산","short":"학습 점수와 실제 예측 성능의 차이를 설명합니다.","detail":"과적합은 훈련 데이터의 우연한 잡음까지 학습해 새로운 데이터에서 성능이 떨어지는 현상입니다. 높은 편향은 너무 단순한 모형에서, 높은 분산은 데이터 변화에 민감한 복잡한 모형에서 흔히 나타납니다. 규제·교차검증·데이터 확대·조기 종료 등으로 조절할 수 있습니다.","exam":"훈련 오차는 낮고 검증 오차가 높으면 과적합을 의심. 다만 측정·데이터 누수 여부도 확인합니다.","example":"고객별 구매를 외워버린 모형보다 일반적인 패턴을 익힌 모형을 선택합니다.","priority":"★★★"},{"parent":"회귀분석","title":"Ridge·Lasso 규제","short":"계수 크기를 제한해 과적합과 불안정성을 줄이는 회귀 기법입니다.","detail":"Ridge는 손실함수에 계수 제곱합(L2)을 벌점으로 더해 계수를 줄입니다. Lasso는 계수 절댓값 합(L1)을 더해 일부 계수를 정확히 0으로 만들 수 있으므로 변수 선택에도 활용됩니다. 변수 스케일과 규제 강도를 함께 검토해야 합니다.","exam":"Ridge=L2, Lasso=L1. 어느 방법이나 모든 상황에서 성능 향상을 보장하지는 않습니다.","example":"수백 개 광고 변수 중 중요한 변수를 골라 판매량을 예측합니다.","priority":"★★★"},{"parent":"연관분석","title":"Apriori·FP-Growth","short":"빈발 항목집합을 찾아 연관규칙을 만드는 방법입니다.","detail":"Apriori는 빈발 항목집합의 모든 부분집합도 빈발해야 한다는 성질을 이용해 후보 집합을 단계적으로 줄입니다. FP-Growth는 FP-tree에 거래를 압축해 후보 생성 부담을 줄이는 방식입니다. 연관규칙의 유용성은 지지도·신뢰도·향상도로 평가합니다.","exam":"Apriori의 하향 폐쇄성: 드문 항목집합의 모든 상위집합도 빈발하지 않습니다.","example":"장바구니에서 우유와 빵을 함께 구매하는 패턴을 찾아 상품 배치를 개선합니다.","priority":"★★★"},{"parent":"R·전처리","title":"주성분분석 PCA","short":"관련된 여러 변수를 소수의 새로운 축으로 요약하는 차원축소 기법입니다.","detail":"PCA는 원래 변수의 선형결합으로 서로 직교하는 주성분을 만들고, 앞쪽 성분부터 가능한 큰 분산을 설명하도록 합니다. 보통 변수 단위가 다르면 표준화가 중요합니다. 주성분 개수는 원래 변수 수 및 자료 행렬의 랭크를 넘을 수 없고, 중심화된 n개 관측치에서는 0이 아닌 주성분이 최대 min(p,n−1)개입니다.","exam":"PCA는 기본적으로 정답 레이블을 이용하지 않는 비지도 차원축소. 주성분=선형결합, 분산 최대.","example":"서로 관련된 고객 소비 지표 20개를 소수의 요약 지표로 바꿉니다.","priority":"★★★"},{"parent":"R·전처리","title":"결측치·이상치 처리","short":"분석 전에 누락된 값과 극단값의 원인을 점검합니다.","detail":"결측값은 MCAR·MAR·MNAR처럼 발생 메커니즘이 다를 수 있으며, 삭제·평균/중앙값 대체·모형 기반 대체 등 여러 방법이 있습니다. 이상치는 입력 오류일 수도 있고 실제 중요한 사건일 수도 있으므로 무조건 제거하면 안 됩니다.","exam":"결측치 처리에 정답 하나가 있는 것은 아닙니다. 훈련·검증 데이터 분리 전에 전체 데이터로 평균을 학습하면 누수가 생길 수 있습니다.","example":"매출 이상값이 결제 오류인지 실제 대량 주문인지 확인하고 처리합니다.","priority":"★★★"},{"parent":"앙상블","title":"랜덤 포레스트","short":"여러 의사결정나무의 예측을 결합하는 배깅 계열 기법입니다.","detail":"각 나무는 보통 부트스트랩 표본으로 훈련되고 노드 분할 시 일부 변수 후보를 무작위로 고려해 나무 간 상관을 낮춥니다. 분류는 다수결, 회귀는 평균 등으로 결과를 결합합니다. 단일 나무보다 분산을 줄이는 데 도움이 될 수 있습니다.","exam":"랜덤 포레스트=배깅+변수 무작위 선택. 부스팅처럼 앞 나무의 오답만 순차적으로 수정하는 방식이 아닙니다.","example":"고객 이탈을 예측할 때 여러 나무의 판단을 합쳐 안정성을 높입니다.","priority":"★★★"},{"parent":"분류분석","title":"로지스틱 회귀 분류","short":"연속적인 점수 대신 범주에 속할 확률을 예측합니다.","detail":"로지스틱 회귀는 이름에 회귀가 있지만 이진분류에도 널리 쓰입니다. 선형예측값을 시그모이드로 변환하여 0~1 사이 확률을 추정하고 임계값으로 범주를 판정합니다. 로지스틱 회귀 모형의 계수는 확률 변화량이 아니라 로그오즈 변화를 나타냅니다.","exam":"로지스틱 회귀는 지도학습의 분류 모델. 회귀모형·오즈비와 함께 이해합니다.","example":"거래가 정상인지 사기인지의 확률을 예측합니다.","priority":"★★★"}];
+for(let i=0;i<studyNewConcepts.length;i++){const item=studyNewConcepts[i];const owner=defaultNodes.find(n=>n.title===item.parent);if(!owner)continue;if(defaultNodes.some(n=>n.title===item.title))continue;const id=add(owner.id,item.title,"",item.short,item.detail,item.example,item.exam,"",item.priority);defaultNodes.find(n=>n.id===id).id="study-"+String(i+1).padStart(3,"0");}
 // Cross-links using concept ids. 
 const titleToId=new Map(defaultNodes.map(n=>[n.title,n.id]));function cross(x,y){const id1=titleToId.get(x),id2=titleToId.get(y);if(id1&&id2)defaultLinks.push({a:id1,b:id2})}
-cross('DIKW','SECI 지식경영');cross('빅데이터 3V·4V','분석 마스터플랜');cross('KDD','CRISP-DM');cross('분석 준비도','분석 성숙도');cross('데이터 거버넌스','분석 마스터플랜');cross('하향식 접근','업무 이해');cross('상향식 접근','비지도학습');cross('회귀분석','t통계량');cross('회귀분석','상관분석');cross('SVM','지도학습');cross('지도학습','비지도학습');cross('군집분석','혼합분포·EM');cross('연관분석','군집분석');cross('분류분석','혼동행렬');cross('혼동행렬','정확도·오분류율');cross('정밀도·재현율','특이도');cross('앙상블','의사결정나무');cross('정성·정량','측정 척도');
+cross('DIKW','SECI 지식경영');cross('빅데이터 3V·4V','분석 마스터플랜');cross('KDD','CRISP-DM');cross('분석 준비도','분석 성숙도');cross('데이터 거버넌스','분석 마스터플랜');cross('하향식 접근','업무 이해');cross('상향식 접근','비지도학습');cross('회귀분석','t통계량');cross('회귀분석','상관분석');cross('SVM','지도학습');cross('지도학습','비지도학습');cross('군집분석','혼합분포·EM');cross('연관분석','군집분석');cross('분류분석','혼동행렬');cross('혼동행렬','정확도·오분류율');cross('정밀도·재현율','특이도');cross('앙상블','의사결정나무');cross('정성·정량','측정 척도');cross('데이터의 유형','정형·반정형·비정형');cross('OLTP·OLAP','분석 마스터플랜');cross('분석 준비도','분석 조직 유형');cross('회귀분석','로지스틱 회귀·오즈비');cross('로지스틱 회귀·오즈비','로지스틱 회귀 분류');cross('회귀분석','다중공선성·VIF');cross('분산분석 ANOVA','F검정·사후검정');cross('시계열분석','ARIMA 모형');cross('연관분석','Apriori·FP-Growth');cross('혼동행렬','ROC·AUC');cross('주성분분석 PCA','비지도학습');cross('앙상블','랜덤 포레스트');cross('모델 평가','교차검증·홀드아웃');
 const STORAGE='adsp-atlas-v1';let nodes=[],links=[],focus=root,modalMode='',editColor='root',panelOpen=false,transitioning=false,searchMode='navigate',oldFocus=root;
 const el=id=>document.getElementById(id);const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const byId=id=>nodes.find(n=>n.id===id);const children=id=>nodes.filter(n=>n.parent===id);const colorOf=node=>COLORS[node?.color]||COLORS.root;const byTitle=n=>n?.title||'';
-function load(){try{const raw=localStorage.getItem(STORAGE);if(raw){const parsed=JSON.parse(raw);if(Array.isArray(parsed.nodes)&&Array.isArray(parsed.links)&&parsed.nodes.some(n=>n.id===root)&&parsed.nodes.length<1500){nodes=parsed.nodes;links=parsed.links.filter(l=>l.a&&l.b);return}}}catch(e){console.warn('Data could not be loaded',e)}nodes=structuredClone(defaultNodes);links=structuredClone(defaultLinks)}
+function mergeStudyTextbook(){
+ const ids=new Set(nodes.map(n=>n.id));
+ const titles=new Set(nodes.map(n=>n.title));
+ const fresh=Object.fromEntries(defaultNodes.map(n=>[n.title,n]));
+ for(const n of nodes){
+  const old=studyLegacyContent[n.title],current=fresh[n.title];
+  if(!old||!current||!n.builtIn)continue;
+  if(n.detail===old.detail)n.detail=current.detail;
+  if(n.exam===old.exam)n.exam=current.exam;
+ }
+ for(const n of defaultNodes){
+  if(ids.has(n.id)||titles.has(n.title))continue;
+  nodes.push(structuredClone(n));ids.add(n.id);titles.add(n.title);
+ }
+ const edgeKeys=new Set(links.map(l=>[l.a,l.b].sort().join('|')));
+ for(const l of defaultLinks){const k=[l.a,l.b].sort().join('|');if(!edgeKeys.has(k)&&ids.has(l.a)&&ids.has(l.b)){links.push({...l});edgeKeys.add(k)}}
+}
+function load(){try{const raw=localStorage.getItem(STORAGE);if(raw){const parsed=JSON.parse(raw);if(Array.isArray(parsed.nodes)&&Array.isArray(parsed.links)&&parsed.nodes.some(n=>n.id===root)&&parsed.nodes.length<1500){nodes=parsed.nodes;links=parsed.links.filter(l=>l.a&&l.b);mergeStudyTextbook();return}}}catch(e){console.warn('Data could not be loaded',e)}nodes=structuredClone(defaultNodes);links=structuredClone(defaultLinks)}
 function persistLocal(markDirty=false){
  try{localStorage.setItem(STORAGE,JSON.stringify({nodes,links}));if(markDirty){cloudDirty=true;localStorage.setItem(CLOUD_DIRTY,'1')}return true}
  catch(e){toast('브라우저 저장에 실패했습니다. JSON 백업을 확인하세요.');return false}
@@ -282,6 +312,19 @@ function palette(node){return node?.color||'root'}
 // One map, infinitely pannable; descendants grow radially rather than replacing the view.
 const expandedConcepts=new Set([root]);
 let mapPositions=new Map();
+// Per-concept manual offsets remain local to this browser, separate from cloud content.
+const NODE_LAYOUT_KEY='adsp-atlas-manual-card-layout-v1';
+let manualCardOffsets={};
+try{
+ const stored=JSON.parse(localStorage.getItem(NODE_LAYOUT_KEY)||'{}');
+ if(stored&&typeof stored==='object'&&!Array.isArray(stored)){
+  for(const [id,p] of Object.entries(stored)){
+   if(p&&Number.isFinite(p.dx)&&Number.isFinite(p.dy)&&Math.abs(p.dx)<100000&&Math.abs(p.dy)<100000)manualCardOffsets[id]={dx:p.dx,dy:p.dy};
+  }
+ }
+}catch(_){manualCardOffsets={}}
+function saveCardOffsets(){try{localStorage.setItem(NODE_LAYOUT_KEY,JSON.stringify(manualCardOffsets))}catch(e){console.warn('카드 배치를 저장하지 못했습니다.',e)}}
+
 const mapCamera={scale:1,x:0,y:0};
 const MAP_ZOOM_MIN=.01,MAP_ZOOM_MAX=1.5;
 let mapPointer=null;
@@ -327,6 +370,10 @@ function mapGraphLayout(){
   const first=-Math.PI/2-each/2;
   subjects.forEach((node,i)=>place(node,1,first+i*each,first+(i+1)*each));
  }
+ for(const [id,p] of positions){
+  const shift=manualCardOffsets[id];
+  if(shift){p.x+=shift.dx;p.y+=shift.dy}
+ }
  return positions;
 }
 function makeSVG(tag,attrs,container){const e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);container.append(e);return e}
@@ -341,38 +388,99 @@ function mapCard(n,p){
  const meta=document.createElement('span');meta.className='node-meta';
  meta.textContent=sub.length?(expanded?'− 펼쳐진 개념':'＋ '+sub.length+'개 개념'):'개념 보기';
  btn.append(title,meta);
- btn.onclick=()=>selectConcept(n.id);
+ btn.addEventListener('pointerdown',event=>{
+  if(event.button!==0||event.pointerType==='touch'&&event.isPrimary===false)return;
+  event.stopPropagation();
+  const startX=event.clientX,startY=event.clientY;
+  const originX=mapPositions.get(n.id)?.x??p.x,originY=mapPositions.get(n.id)?.y??p.y;
+  const pointerId=event.pointerId;
+  let moved=false;
+  btn.setPointerCapture(pointerId);
+  const onMove=e=>{
+   if(e.pointerId!==pointerId)return;
+   const sx=e.clientX-startX,sy=e.clientY-startY;
+   if(!moved&&Math.hypot(sx,sy)<6)return;
+   moved=true;
+   const nextX=originX+sx/mapCamera.scale,nextY=originY+sy/mapCamera.scale;
+   const pos=mapPositions.get(n.id);
+   if(!pos)return;
+   pos.x=nextX;pos.y=nextY;
+   btn.style.left=nextX+'px';btn.style.top=nextY+'px';
+   btn.classList.add('card-dragging');
+   repaintMapConnections();
+  };
+  const onEnd=e=>{
+   if(e.pointerId!==pointerId)return;
+   btn.removeEventListener('pointermove',onMove);
+   btn.removeEventListener('pointerup',onEnd);
+   btn.removeEventListener('pointercancel',onEnd);
+   btn.removeEventListener('lostpointercapture',onEnd);
+   btn.classList.remove('card-dragging');
+   if(moved){
+    const pos=mapPositions.get(n.id);
+    const auto=mapGraphLayout();
+    // mapGraphLayout already applies existing offsets; subtract those to retain only the new displacement.
+    const base=auto.get(n.id);
+    if(pos&&base){
+     const old=manualCardOffsets[n.id]||{dx:0,dy:0};
+     manualCardOffsets[n.id]={dx:old.dx+pos.x-base.x,dy:old.dy+pos.y-base.y};
+     saveCardOffsets();
+    }
+    // Suppress the click normally fired after releasing a dragged button.
+    btn.dataset.suppressClick='1';
+    setTimeout(()=>{delete btn.dataset.suppressClick},0);
+   }
+   if(btn.hasPointerCapture(pointerId))btn.releasePointerCapture(pointerId);
+  };
+  btn.addEventListener('pointermove',onMove);
+  btn.addEventListener('pointerup',onEnd);
+  btn.addEventListener('pointercancel',onEnd);
+  btn.addEventListener('lostpointercapture',onEnd);
+ });
+ btn.addEventListener('click',event=>{
+  if(btn.dataset.suppressClick==='1'){event.preventDefault();event.stopPropagation();delete btn.dataset.suppressClick;return}
+  selectConcept(n.id);
+ });
  el('nodes').append(btn);
 }
 function mapConnection(from,to,container,variant,color){
- const dx=to.x-from.x,dy=to.y-from.y;
- const length=Math.hypot(dx,dy)||1;
- const ux=dx/length,uy=dy/length;
- const bend=Math.min(length*.27,180);
- const path='M '+from.x+' '+from.y+' C '+(from.x+ux*bend)+' '+(from.y+uy*bend)+', '+(to.x-ux*bend)+' '+(to.y-uy*bend)+', '+to.x+' '+to.y;
- makeSVG('path',{d:path,class:variant?'concept-crosslink':'concept-branch',stroke:color||'#a5a5af',fill:'none'},container);
+ // Attach to the nearest rectangle edges rather than drawing through their centers.
+ const halfW=variant?110:115,halfH=56;
+ function edgePoint(a,b){
+  const dx=b.x-a.x,dy=b.y-a.y;
+  const t=1/Math.max(Math.abs(dx)/halfW,Math.abs(dy)/halfH,1e-9);
+  return {x:a.x+dx*t,y:a.y+dy*t};
+ }
+ const fromEdge=edgePoint(from,to),toEdge=edgePoint(to,from);
+ const dx=toEdge.x-fromEdge.x,dy=toEdge.y-fromEdge.y;
+ const bend=Math.min(Math.abs(dx)*.42,170);
+ // Low-curvature monotonic Bezier; avoids excessive S-loops in dense branches.
+ const d='M '+fromEdge.x+' '+fromEdge.y+' C '+(fromEdge.x+Math.sign(dx)*bend)+' '+fromEdge.y+' '+(toEdge.x-Math.sign(dx)*bend)+' '+toEdge.y+' '+toEdge.x+' '+toEdge.y;
+ makeSVG('path',{d,class:variant?'concept-crosslink':'concept-branch',stroke:color||'#a5a5af',fill:'none'},container);
+}
+function repaintMapConnections(){
+ const edges=el('edges');edges.replaceChildren();
+ const points=[...mapPositions.values()];if(!points.length)return;
+ const minX=Math.min(...points.map(p=>p.x))-350,maxX=Math.max(...points.map(p=>p.x))+350;
+ const minY=Math.min(...points.map(p=>p.y))-350,maxY=Math.max(...points.map(p=>p.y))+350;
+ edges.style.left=minX+'px';edges.style.top=minY+'px';
+ edges.style.width=(maxX-minX)+'px';edges.style.height=(maxY-minY)+'px';
+ edges.setAttribute('viewBox',[minX,minY,maxX-minX,maxY-minY].join(' '));
+ for(const n of nodes){
+  const pos=mapPositions.get(n.id),parent=mapPositions.get(n.parent);
+  if(pos&&parent)mapConnection(parent,pos,edges,false,colorOf(n));
+ }
+ for(const link of links){
+  const a=mapPositions.get(link.a),b=mapPositions.get(link.b);
+  if(a&&b)mapConnection(a,b,edges,true);
+ }
 }
 function renderMap(){
  const area=el('mapArea');if(!area.clientWidth||!area.clientHeight)return;
  mapPositions=mapGraphLayout();
  const layer=el('nodes'),orbits=el('orbits'),edges=el('edges');
  layer.replaceChildren();orbits.replaceChildren();edges.replaceChildren();
- // SVG has to follow the entire expanded board, not the viewport. Otherwise
- // links disappear when panning to a node outside the original screen.
- const points=[...mapPositions.values()];
- const minX=Math.min(...points.map(p=>p.x))-300,maxX=Math.max(...points.map(p=>p.x))+300;
- const minY=Math.min(...points.map(p=>p.y))-300,maxY=Math.max(...points.map(p=>p.y))+300;
- edges.style.left=minX+'px';edges.style.top=minY+'px';
- edges.style.width=(maxX-minX)+'px';edges.style.height=(maxY-minY)+'px';
- edges.setAttribute('viewBox',[minX,minY,maxX-minX,maxY-minY].join(' '));
- for(const n of nodes){
-  const p=mapPositions.get(n.id),parent=mapPositions.get(n.parent);
-  if(p&&parent)mapConnection(parent,p,edges,false,colorOf(n));
- }
- for(const link of links){
-  const one=mapPositions.get(link.a),two=mapPositions.get(link.b);
-  if(one&&two)mapConnection(one,two,edges,true);
- }
+ repaintMapConnections();
  for(const n of nodes){const p=mapPositions.get(n.id);if(p)mapCard(n,p)}
  el('crumb').replaceChildren();
  ancestors(focus).forEach((part,i)=>{
@@ -431,14 +539,10 @@ function expandAllMindmap(){for(const n of nodes)if(children(n.id).length)expand
 function makeSection(title,content){if(!content)return null;const div=document.createElement('section');div.className='detail-section';const heading=document.createElement('h3');heading.className='section-heading';heading.textContent=title;div.append(heading);const body=document.createElement('div');body.className='section-copy';body.textContent=content;div.append(body);return div}
 // Expanded educational explanation takes priority over one-line summary.
 function conceptOverview(n){
- if(n.title==='SECI 지식경영')return 'SECI 모델은 조직이 가진 개인의 경험과 노하우를 다른 사람과 공유할 수 있는 지식으로 바꾸고, 그 지식을 다시 개인의 실무 능력으로 체득하게 만드는 지식 창출 과정입니다. 말이나 글로 쉽게 표현하기 어려운 암묵지와 문서·매뉴얼처럼 표현할 수 있는 형식지가 서로 전환하면서 조직 전체의 지식이 축적되고 발전합니다. 네 단계는 한 번으로 끝나지 않고 반복되며 새로운 지식이 만들어집니다.';
  const intro=(n.short||'').trim(),detail=(n.detail||'').trim();
  return [intro,detail&&detail!==intro?detail:''].filter(Boolean).join('\n\n')||'이 개념의 설명을 추가해 보세요.';
 }
-function essentialConcept(n){
- if(n.title==='SECI 지식경영')return '암묵지: 경험과 감각으로 알고 있으나 문서화하기 어려운 노하우.\n형식지: 글·도표·매뉴얼 등으로 표현하거나 전달할 수 있는 지식.\n\n① 공통화(Socialization): 암묵지 → 암묵지. 경험을 함께하며 노하우를 익힘.\n② 표출화(Externalization): 암묵지 → 형식지. 노하우를 문서나 모델로 표현.\n③ 연결화(Combination): 형식지 → 형식지. 여러 문서와 정보를 결합해 새 지식을 만듦.\n④ 내면화(Internalization): 형식지 → 암묵지. 배운 내용을 실습하여 자신의 경험으로 체득.\n\n흐름: 공통화 → 표출화 → 연결화 → 내면화';
- return [n.exam,n.memory].filter(Boolean).join('\n\n')||(n.detail||'');
-}
+function essentialConcept(n){return (n.exam||'').trim()||(n.detail||'').trim();}
 function renderDetail(){const n=byId(focus)||byId(root);const detail=el('detail');detail.style.setProperty('--detail-hue',colorOf(n));el('childAddBtn').style.removeProperty('background');const head=el('detailHeader');head.replaceChildren();const top=document.createElement('div');top.className='panel-top';const subject=document.createElement('div');subject.className='chapter-label';const belonging=course(n);subject.textContent=n.id===root?'ADsP 전체 학습':(belonging&&belonging.id!==root?belonging.title:'ADsP 전체 학습');const controls=document.createElement('div');controls.className='panel-buttons';const edit=document.createElement('button');edit.className='icon-btn';edit.textContent='✎';edit.title='개념 수정';edit.setAttribute('aria-label','개념 수정');edit.onclick=()=>openEditor('edit',n.id);controls.append(edit);const parent=byId(n.parent);if(parent){const back=document.createElement('button');back.className='icon-btn';back.textContent='↶';back.title='상위 개념으로';back.onclick=()=>navigate(parent.id);controls.append(back)}const hide=document.createElement('button');hide.className='icon-btn mobile-close';hide.textContent='×';hide.title='설명 패널 닫기';hide.onclick=()=>{panelOpen=false;detail.classList.remove('mobile-open')};controls.append(hide);top.append(subject,controls);head.append(top);const title=document.createElement('h2');title.className='detail-title';title.textContent=n.title;head.append(title);
  const scroll=el('detailScroll');scroll.replaceChildren();
  const sections=[makeSection('개념 이해',conceptOverview(n)),makeSection('핵심 정리',essentialConcept(n)),makeSection('실제 활용 사례',n.example)];sections.filter(Boolean).forEach(section=>scroll.append(section));
@@ -561,7 +665,7 @@ function currentSnapshot(){return {nodes:structuredClone(nodes),links:structured
 function markClean(){cloudDirty=false;localStorage.removeItem(CLOUD_DIRTY)}
 function applyCloud(doc){
  if(!doc||!Array.isArray(doc.nodes)||!Array.isArray(doc.links)||!doc.nodes.some(n=>n.id===root)||doc.nodes.length>1500)throw new Error('클라우드 데이터 형식이 올바르지 않습니다.');
- nodes=doc.nodes;links=doc.links;focus=byId(focus)?focus:root;persistLocal(false);markClean();renderMap();renderDetail();
+ nodes=doc.nodes;links=doc.links;mergeStudyTextbook();focus=byId(focus)?focus:root;persistLocal(false);markClean();renderMap();renderDetail();
 }
 async function cloudSDK(){
  if(window.supabase?.createClient)return window.supabase;
