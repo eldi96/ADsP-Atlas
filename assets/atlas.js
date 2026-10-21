@@ -267,38 +267,100 @@ for(const [x,y] of [["데이터베이스 운영 특성","데이터베이스 4대
  if(!a||!b)throw Error('39회 관계 노드 누락: '+x+' / '+y);
  if(!defaultLinks.some(l=>(l.a===a&&l.b===b)||(l.a===b&&l.b===a)))defaultLinks.push({a,b});
 }
+
+/* ATLAS_REFACTOR_OCT2026: dedup graph preserving stable node IDs, user notes and cross-links. */
+const originalBuiltInNodes=JSON.parse(JSON.stringify(defaultNodes));
+const supplementaryLessons=[["R·전처리","탐색적 데이터 분석 EDA","모형을 만들기 전에 분포·결측·이상값·변수 관계를 탐색하는 과정.","요약통계와 시각화로 데이터 특성을 파악합니다. 탐색 중 발견한 패턴은 인과적 결론이 아닙니다.","매출 그래프를 그려 계절성과 이상 거래를 찾아봅니다.","EDA=데이터 이해, 모델 성능평가와 구별.","EDA=먼저 살펴보기"],["R·전처리","이상치·결측값 처리","빠진 값과 주변 값에서 크게 벗어난 관측치를 확인·처리하는 전처리.","결측은 삭제·평균/중앙값·집단별 대치가 가능하고, 이상치는 입력 오류인지 중요한 신호인지 먼저 판단합니다. MAD는 중앙값 기준 절대편차의 중앙값입니다.","고객 나이 누락은 대치, 사기 의심 거래는 이상탐지 대상으로 보존.","이상치 무조건 삭제 X, 전처리 기준은 훈련 데이터에서 학습.","결측=빠진 값·이상=튀는 값"],["머신러닝","이상탐지","정상 데이터와 다른 드문 사건이나 패턴을 찾는 기술.","통계 규칙·거리·밀도·격리숲 등으로 탐색하며 정답 라벨 유무에 따라 지도·비지도 방식이 가능합니다.","평소와 다른 국가에서 갑자기 로그인한 계정을 찾습니다.","이상탐지≠항상 데이터 오류; 분류와 목적 비교.","평소와 다른 사건 찾기"],["회귀분석","Ridge·Lasso 규제회귀","복잡한 회귀모형의 계수에 벌점을 주어 과적합을 완화합니다.","Ridge=L2 계수 제곱합 벌점으로 계수를 축소; Lasso=L1 절댓값 벌점으로 일부 계수를 0으로 만들어 변수 선택 효과를 냅니다.","유사한 고객 변수 수십 개로 매출을 예측할 때 사용.","Ridge=L2, Lasso=L1; AIC·BIC는 모형 비교 기준.","L2 Ridge·L1 Lasso"],["모델 평가","AIC·BIC 정보기준","모형 적합도와 복잡도를 함께 평가하는 모형 비교 지표.","AIC=−2log L+2k, BIC=−2log L+k ln n. 같은 데이터·우도 정의의 후보 모형 중 작은 값을 선호합니다.","변수 3개·6개 회귀모델의 과적합 위험을 함께 비교.","AIC·BIC는 p값이나 예측 정확도와는 다른 값.","모형 적합+복잡도"],["R·전처리","R 기본 자료구조","R에서 벡터·행렬·데이터프레임·리스트로 자료를 저장합니다.","벡터·행렬은 원칙적으로 단일 자료형, 데이터프레임은 열마다 다른 자료형, 리스트는 서로 다른 객체를 담을 수 있습니다.","CSV를 data.frame에 넣고 head()로 첫 행을 확인.","head=앞부분, summary=요약, str=구조.","벡터 한 타입·프레임 열별 타입"],["R·전처리","범주형 인코딩·변수 변환","모델이 다루기 쉽도록 범주나 수치 변수의 표현을 바꾸는 작업.","더미/원핫 인코딩은 범주를 0·1로 표현, 로그변환은 치우친 분포를 완화할 수 있고 표준화는 스케일을 맞춥니다.","결제수단을 0·1 변수로 바꾸고 연봉은 표준화합니다.","인코딩=범주, 표준화=수치 크기.","범주는 인코딩·수치는 스케일"],["3과목 · 데이터분석","통계적 추정","표본을 바탕으로 모집단의 평균·비율 등 모수를 추정하는 과정.","점추정과 신뢰구간의 구간추정이 있으며 표본분포·표준오차·중심극한정리가 기반입니다.","일부 수험생 점수로 전체 평균과 신뢰구간 추정.","추정=모수 파악, 검정=주장 판단.","표본으로 모수를 추정"],["통계적 추정","표준오차 SE","표본 통계량이 반복 표본에서 얼마나 흔들리는지 나타낸 표준편차.","표본평균의 SE는 σ/√n, σ를 모르면 s/√n으로 추정합니다. 개별 점수 퍼짐 SD와 표본평균 흔들림 SE는 다릅니다.","시험 점수 평균의 신뢰구간을 계산합니다.","n이 4배면 평균 SE는 대략 절반.","SE=평균의 흔들림"],["통계적 추정","표본분포","같은 모집단에서 여러 표본을 뽑을 때 표본평균 등 통계량이 만드는 분포.","표본분포는 개별 관측값의 분포가 아닙니다. 중심극한정리는 적절한 조건에서 표본평균 분포가 정규분포에 가까워짐을 설명합니다.","100명씩 반복 추출한 평균들로 히스토그램을 작성.","표본분포와 모집단 분포 구별.","통계량들의 분포"],["가설검정","t검정","표본평균 차이에 통계적 근거가 있는지 t통계량으로 평가하는 방법.","일표본=기준값, 독립표본=독립 두 집단, 대응표본=같은 대상 전후를 비교합니다. 표본·독립성 등 검정별 가정을 확인합니다.","같은 학생의 새 학습법 전후 점수 차이 검정.","t=평균, 카이제곱=빈도, ANOVA=여러 집단 평균.","평균 차이=t검정"],["모델 평가","데이터 분할과 데이터 누출","학습·검증·테스트 데이터를 나눠 새 데이터에서의 성능을 확인하는 절차.","훈련으로 모델 학습, 검증으로 조정, 테스트로 최종 평가합니다. 테스트 정보를 미리 전처리나 변수선택에 사용하면 누출이 생길 수 있습니다.","이탈 예측에서 고객 테스트 정답을 모델 개발에 사용하지 않습니다.","최종 테스트는 튜닝에 재사용 X.","테스트는 마지막에"],["모델 평가","ROC 곡선과 AUC","이진 분류의 여러 임계값에서 재현율과 거짓 양성 비율을 비교합니다.","ROC 세로축 TPR=TP/(TP+FN), 가로축 FPR=FP/(FP+TN). AUC는 ROC 곡선 면적으로 분리능력을 요약합니다.","보안 경보 임계값을 바꿔 오탐과 탐지율을 비교.","AUC는 정확도와 다름, 불균형에서는 PR도 검토.","ROC=TPR vs FPR"],["모델 평가","불균형 데이터와 분류 임계값","정상·이상 데이터 비율이 크게 다를 때 성능을 잘못 해석하지 않도록 돕는 개념.","정상 990·이상 10건에서 모두 정상 판정해도 정확도 99%입니다. 정밀도·재현율·F1과 비용 기준 임계값을 고려합니다.","사기 탐지에서 탐지율과 정상 고객의 오탐을 절충합니다.","불균형에서는 정확도만 높아도 좋은 모델 아님.","정확도 함정"],["군집분석","군집 평가·실루엣 계수","군집 내부가 비슷하고 서로 다른 군집은 떨어져 있는지 평가하는 지표.","실루엣 s=(b−a)/max(a,b), a=자기 군집 평균거리, b=가장 가까운 다른 군집 평균거리. 1에 가까우면 분리가 좋습니다.","K=2,3,4의 K-means 결과 중 잘 구분되는 K를 선택합니다.","실루엣은 정답 라벨 불필요, Purity는 참조 라벨 필요.","실루엣=응집+분리"],["배깅","랜덤 포레스트","여러 의사결정나무의 예측을 결합한 대표적인 앙상블.","부트스트랩 표본과 분할별 무작위 변수 후보로 나무의 다양성을 높입니다. 분류는 다수결, 회귀는 평균으로 결합합니다.","고객 이탈을 여러 나무의 투표로 예측.","랜덤 포레스트=배깅 계열, 부스팅과 구분.","숲=여러 나무 투표"],["딥러닝","경사하강법과 역전파","오차를 줄이도록 신경망 가중치를 계산·갱신하는 학습 원리.","역전파는 연쇄법칙으로 각 가중치의 기울기를 구하고 경사하강법은 기울기 반대 방향으로 가중치를 수정합니다.","이미지 분류에서 예측이 틀리면 가중치를 조금씩 수정합니다.","역전파는 미분 계산, 경사하강은 갱신.","역전파 계산·경사하강 갱신"],["시계열분석","AR·MA·SARIMA 비교","시계열 예측에 과거 값·과거 오차·계절성을 반영하는 기법들의 차이.","AR은 과거 관측값, MA는 과거 오차, ARIMA는 차분을 포함하고 SARIMA는 계절 차분과 계절성 항을 더합니다. MA 확률모형은 이동평균 평활과 다릅니다.","매년 반복되는 월별 매출에 계절 ARIMA를 적용합니다.","AR=과거값, MA=과거오차, SARIMA=계절.","계절 ARIMA=SARIMA"]];
+for(const [parent,title,short,detail,example,exam,memory] of supplementaryLessons){
+ const p=defaultNodes.find(n=>n.title===parent);
+ if(!p)throw Error('Missing parent: '+parent);
+ if(!defaultNodes.some(n=>n.title===title))add(p.id,title,'·',short,detail,example,exam,memory,'★★★');
+}
+const duplicateRules=[["42회 2번 DIKW 사례 교정","DIKW"],["42회 11번 KDD 절차","KDD"],["42회 13번 CRISP-DM 업무이해","업무 이해"],["42회 14번 4V의 Value","비즈니스 가치"],["42회 5·8번 빅데이터 위험과 대응","빅데이터 위기"],["42회 1번 정성·정량과 정형·비정형 구분","정성·정량"],["42회 3번 데이터 사이언티스트 역량","데이터 사이언티스트 역량"],["42회 6·7·9번 빅데이터 변화와 발전","빅데이터의 패러다임 변화"],["42회 4번 데이터베이스 4대 특징","데이터베이스 4대 특성"],["42회 41번 이진 분류와 회귀","분류분석"],["42회 42번 정지·가지치기·비용복잡도·교차검증","정지규칙·가지치기"],["42회 43번 다중공선성 진단과 대처","다중공선성"],["42회 44번 회귀 전체 F검정과 개별 t검정","회귀모형 F·t·R² 구분"],["42회 45번 데이터베이스 네 가지 특성","데이터베이스 4대 특성"],["42회 46번 이상치·범위·결측값 대치·MAD","이상치·결측값 처리"],["42회 47번 AR·MA·ARIMA·SARIMA","ARIMA(p,d,q)"],["42회 48번 선형회귀 잔차 가정","회귀 오차항 가정"],["42회 49번 지지도·신뢰도·향상도 구분","연관분석"],["42회 50번 Apriori와 순차패턴 구별","Apriori 알고리즘"],["42회 15번 성숙도 최적화","분석 성숙도"],["42회 16번 상향식과 하향식","과제 발굴 방식"],["42회 18번 시급성과 전략적 중요도","과제 우선순위"],["42회 19번 분석 준비도 여섯 영역","준비도 6영역"],["42회 20번 데이터 분석 플랫폼 구성","분석 플랫폼 범위"],["42회 25번 추세·계절·순환·불규칙","분해시계열 4요인"],["42회 26번 지도학습과 비지도학습","머신러닝"],["42회 28번 앙상블과 시그모이드","앙상블"],["42회 29번 이상탐지 활용","이상탐지"],["42회 30번 만족도와 서열척도","측정 척도"],["42회 33번 회귀계수 t통계량 계산","t통계량"],["42회 34번 오분류율과 정밀도","정확도·오분류율"],["42회 35번 양성예측도","정밀도·재현율"],["42회 신뢰구간의 표본 변동","신뢰구간의 표본변동"],["42회 변수선택 전진·후진·단계적","회귀변수 선택법"],["41회 1번 DIKW와 Insight 구별","DIKW"],["41회 2번 콘텐츠·DB·DBMS·DB시스템","데이터베이스"],["41회 3번 ERP·SCM·CRM·ITS","기업 데이터 활용 시스템"],["41회 4번 빅데이터 변화 방향","빅데이터의 패러다임 변화"],["41회 5번 빅데이터 가치 산정의 어려움","빅데이터 가치 측정의 어려움"],["41회 6·7번 알고리즈미스트와 위기 대응","빅데이터 위기"],["41회 8·9번 분석가 하드·소프트 스킬","데이터 사이언티스트 역량"],["41회 13번 KDD 전처리·변환 구분","KDD"],["41회 14번 상향식 문제발굴","상향식 접근"],["41회 17번 분석 로드맵과 파일럿","분석 마스터플랜"],["41회 18번 분석 거버넌스 구성요소","데이터 거버넌스"],["41회 19번 분석조직의 의사결정 지원","분석 조직 구조 3유형"],["41회 23번 중앙값과 이상값","평균·중앙값·최빈값"],["41회 24번 명목·서열·등간·비율","측정 척도"],["41회 25번 모수검정과 비모수검정","모수·비모수 검정"],["41회 27·28번 R summary·head 함수","R summary·range 해석"],["41회 29번 회귀 오차항 가정","회귀 오차항 가정"],["41회 36번 지니·엔트로피·이진분할","의사결정나무 분할 기준"],["41회 41번 은닉 노드 수와 과소적합","일반화와 과적합"],["41회 42번 재현율 계산","정밀도·재현율"],["41회 43번 Lasso·Ridge·AIC·BIC","Ridge·Lasso 규제회귀"],["41회 35번 MDS와 군집분석","다차원척도법 MDS"],["데이터베이스 운영 특성","데이터베이스 4대 특성"],["가치 기반 분석","비즈니스 가치"],["K-means 계산과 시각화","K-means"],["k-NN의 특성","KNN"],["오분류율 계산 사례","정확도·오분류율"],["향상도 계산","향상도"],["효율성과 안정성","일반화와 과적합"],["분해시계열 비교","분해시계열 4요인"],["시급성·난이도 우선순위","과제 우선순위"],["회귀모형 진단","회귀 오차항 가정"],["군집분석의 목적과 평가","군집분석"],["일원분산분석의 가설과 해석","분산분석 ANOVA"]];
+const redirectIds=new Map();
+for(const [a,b] of duplicateRules){
+ const n=defaultNodes.find(n=>n.title===a),target=defaultNodes.find(n=>n.title===b);
+ if(!n||!target||n.id===target.id||redirectIds.has(n.id))throw Error('Invalid alias: '+a+' => '+b);
+ redirectIds.set(n.id,target.id);
+ (target.archivedStudyNodes??=[]).push({title:n.title,short:n.short,detail:n.detail,example:n.example,exam:n.exam,memory:n.memory});
+ if(n.round39Evidence)(target.round39Evidence??=[]).push(...n.round39Evidence);
+ if(n.round40Evidence)(target.round40Evidence??=[]).push(...n.round40Evidence);
+}
+const resolveLegacyId=id=>redirectIds.get(id)||id;
+defaultNodes.splice(0,defaultNodes.length,...defaultNodes.filter(n=>!redirectIds.has(n.id)));
+for(const n of defaultNodes)if(n.parent)n.parent=resolveLegacyId(n.parent);
+const seenDefaultLinks=new Set();
+for(let i=defaultLinks.length-1;i>=0;i--){
+ const l=defaultLinks[i];l.a=resolveLegacyId(l.a);l.b=resolveLegacyId(l.b);
+ const k=[l.a,l.b].sort().join('|');
+ if(l.a===l.b||seenDefaultLinks.has(k))defaultLinks.splice(i,1);else seenDefaultLinks.add(k);
+}
+for(const [oldName,newName] of [["분석 플랫폼 범위","데이터 분석 플랫폼"],["신뢰구간의 표본변동","신뢰구간"],["엣지 컴퓨팅과 상향식 탐색","엣지 컴퓨팅"],["데이터의 특성과 비트·바이트","데이터의 성격"],["ARIMA·GARCH·LSTM 활용","시계열 모형 선택"]]){
+ const node=defaultNodes.find(n=>n.title===oldName);
+ if(!node||defaultNodes.some(n=>n.title===newName))throw Error('Invalid rename: '+oldName);
+ node.title=newName;
+}
+for(const [name,parentName] of [["데이터 분석 플랫폼","분석 마스터플랜"],["빅데이터 분석 방법론 5단계","2과목 · 분석 기획"],["거리 척도","군집분석"],["주성분분석 PCA","비지도학습"],["다차원척도법 MDS","비지도학습"],["모수·비모수 검정","가설검정"],["복원·비복원 추출","표본추출 방법"],["중심극한정리","통계적 추정"],["점추정과 구간추정","통계적 추정"],["신뢰구간","통계적 추정"]]){
+ const node=defaultNodes.find(n=>n.title===name),parent=defaultNodes.find(n=>n.title===parentName);
+ if(!node||!parent)throw Error('Invalid relocation: '+name);
+ node.parent=parent.id;
+}
+// A built-in label should not be a reconstructed question number.
+for(const n of defaultNodes){
+ const heading=(n.short||'').match(/^\d+회\s+[^:]{1,45}:\s*/);
+ if(heading)n.short=n.short.slice(heading[0].length).slice(0,250);
+ const match=(n.memory||'').match(/\s+\d+회\s+\d/);
+ if(match){(n.archivedMemoryNotes??=[]).push(n.memory.slice(match.index).trim());n.memory=n.memory.slice(0,match.index).trim();}
+}
+
 let nodes=[],links=[],focus=root,modalMode='',editColor='root',panelOpen=false,transitioning=false,searchMode='navigate',oldFocus=root;
 const el=id=>document.getElementById(id);const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const byId=id=>nodes.find(n=>n.id===id);const children=id=>nodes.filter(n=>n.parent===id);const colorOf=node=>COLORS[node?.color]||COLORS.root;const byTitle=n=>n?.title||'';
 // Merge new built-in study cards into existing local/cloud snapshots without deleting user-created nodes.
 function mergeAtlasDefaults(doc){
  if(!doc||!Array.isArray(doc.nodes)||!Array.isArray(doc.links))return doc;
- const merged=structuredClone(doc),existing=new Set(merged.nodes.map(n=>n.id));
- const titles=new Set(merged.nodes.map(n=>n.title));
- const original=new Map(defaultNodes.map(n=>[n.id,n]));
- const resolveParent=(n)=>{const p=original.get(n.parent);return p?merged.nodes.find(x=>x.title===p.title)?.id??n.parent:n.parent};
- for(const n of defaultNodes){
-  if(existing.has(n.id)||titles.has(n.title))continue;
-  const copy=structuredClone(n);copy.parent=resolveParent(n);
-  if(copy.parent!==null&&!merged.nodes.some(x=>x.id===copy.parent))continue;
-  merged.nodes.push(copy);existing.add(copy.id);titles.add(copy.title);
+ const merged=JSON.parse(JSON.stringify(doc)),baseline=new Map(originalBuiltInNodes.map(n=>[n.id,n]));
+ const latest=new Map(defaultNodes.map(n=>[n.id,n])),known=new Map(merged.nodes.map(n=>[n.id,n]));
+ for(const builtIn of defaultNodes)if(!known.has(builtIn.id)){
+  const item=JSON.parse(JSON.stringify(builtIn));merged.nodes.push(item);known.set(item.id,item);
  }
- // 기출 근거만 추가 동기화하고 기존 사용자가 편집한 개념 설명은 덮어쓰지 않습니다.
- for(const canonical of defaultNodes){
-  if(!canonical.round40Evidence&&!canonical.round39Evidence)continue;
-  const found=merged.nodes.find(n=>n.title===canonical.title&&n.builtIn);
-  if(!found)continue;
-  if(canonical.round40Evidence)found.round40Evidence=structuredClone(canonical.round40Evidence);
-  if(canonical.round39Evidence)found.round39Evidence=structuredClone(canonical.round39Evidence);
+ for(const node of merged.nodes){
+  if(!node.builtIn||!latest.has(node.id))continue;
+  const old=baseline.get(node.id),next=latest.get(node.id);
+  for(const field of ['title','icon','short','detail','example','exam','memory','priority','color']){
+   if(!old||node[field]===old[field]||node[field]===undefined)node[field]=next[field];
+  }
+  node.parent=next.parent;
+  for(const field of ['round39Evidence','round40Evidence','archivedStudyNodes','archivedMemoryNotes']){
+   if(next[field])node[field]=JSON.parse(JSON.stringify(next[field]));
+  }
  }
- const linkKeys=new Set(merged.links.map(l=>[l.a,l.b].sort().join('|')));
- for(const l of defaultLinks){
-  if(!existing.has(l.a)||!existing.has(l.b))continue;
-  const key=[l.a,l.b].sort().join('|');if(!linkKeys.has(key)){merged.links.push(structuredClone(l));linkKeys.add(key)}
+ for(const old of merged.nodes){
+  const redirect=redirectIds.get(old.id);if(!redirect)continue;
+  const target=known.get(redirect),baselineSource=baseline.get(old.id);
+  if(!target)continue;
+  const changed={};
+  for(const key of ['title','short','detail','example','exam','memory'])
+   if(baselineSource&&old[key]!==baselineSource[key]&&old[key]!=null)changed[key]=old[key];
+  if(Object.keys(changed).length)(target.previousPersonalEdits??=[]).push({from:baselineSource?.title||old.title,...changed});
+  for(const key of ['round39Evidence','round40Evidence']){
+   const k=key==='round39Evidence'?'id':'number';
+   const seen=new Set((target[key]||[]).map(x=>x[k]));
+   for(const evidence of old[key]||[])if(!seen.has(evidence[k])){(target[key]??=[]).push(evidence);seen.add(evidence[k]);}
+  }
+ }
+ merged.nodes=merged.nodes.filter(n=>!redirectIds.has(n.id));
+ for(const n of merged.nodes)if(n.parent)n.parent=resolveLegacyId(n.parent);
+ const ids=new Set(merged.nodes.map(n=>n.id)),edges=new Set(),all=[...merged.links,...defaultLinks];
+ merged.links=[];
+ for(const l of all){
+  const a=resolveLegacyId(l.a),b=resolveLegacyId(l.b),k=[a,b].sort().join('|');
+  if(!a||!b||a===b||!ids.has(a)||!ids.has(b)||edges.has(k))continue;
+  edges.add(k);merged.links.push({...l,a,b});
  }
  return merged;
 }
-function load(){try{const raw=localStorage.getItem(STORAGE);if(raw){const parsed=JSON.parse(raw);if(Array.isArray(parsed.nodes)&&Array.isArray(parsed.links)&&parsed.nodes.some(n=>n.id===root)&&parsed.nodes.length<1500){const merged=mergeAtlasDefaults(parsed);nodes=merged.nodes;links=merged.links.filter(l=>l.a&&l.b);if(merged.nodes.length!==parsed.nodes.length)persistLocal(false);return}}}catch(e){console.warn('Data could not be loaded',e)}nodes=structuredClone(defaultNodes);links=structuredClone(defaultLinks)}
+function load(){try{const raw=localStorage.getItem(STORAGE);if(raw){const parsed=JSON.parse(raw);if(Array.isArray(parsed.nodes)&&Array.isArray(parsed.links)&&parsed.nodes.some(n=>n.id===root)&&parsed.nodes.length<1500){const merged=mergeAtlasDefaults(parsed);nodes=merged.nodes;links=merged.links.filter(l=>l.a&&l.b);persistLocal(false);return}}}catch(e){console.warn('Data could not be loaded',e)}nodes=structuredClone(defaultNodes);links=structuredClone(defaultLinks)}
 function persistLocal(markDirty=false){
  try{localStorage.setItem(STORAGE,JSON.stringify({nodes,links}));if(markDirty){cloudDirty=true;localStorage.setItem(CLOUD_DIRTY,'1')}return true}
  catch(e){toast('브라우저 저장에 실패했습니다. JSON 백업을 확인하세요.');return false}
