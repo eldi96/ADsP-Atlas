@@ -137,6 +137,12 @@ html,body{background:#242426;color:#f4f4f7;font-family:-apple-system,BlinkMacSys
 .concept-crosslink{stroke:#777983!important;stroke-width:1.2!important;opacity:.48!important;stroke-dasharray:4 8!important}
 .mind-node.node{border-radius:12px;overflow:visible}
 .mind-node.node .node-name{color:#191a1f!important}
+
+.map-connect-handle{position:absolute;z-index:9;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:9px;border:1px solid #b5b5bd;background:#414148;color:#fff;font-size:19px;line-height:1;font-weight:500;display:grid;place-items:center;cursor:crosshair;pointer-events:auto;touch-action:none;box-shadow:0 2px 7px #17171b50;transition:background .15s ease}
+.map-connect-handle:hover,.map-connect-handle.is-connecting{background:#696972;border-color:#ededf1}
+.mind-node.connect-drop-target{outline:3px solid #dadade!important;outline-offset:5px;background:#fff!important}
+#connectionPreview{position:absolute;inset:0;z-index:8;pointer-events:none;overflow:visible}
+.map-area.connecting-concepts{cursor:crosshair}
 </style>
 </head>
 <body>
@@ -390,7 +396,7 @@ function mapCard(n,p){
  const sub=children(n.id),expanded=expandedConcepts.has(n.id),selected=n.id===focus;
  const btn=document.createElement('button');
  btn.type='button';btn.className='node mind-node'+(selected?' selected':'')+(expanded?' expanded':'');
- btn.style.left=p.x+'px';btn.style.top=p.y+'px';btn.style.setProperty('--hue',colorOf(n));
+ btn.style.left=p.x+'px';btn.style.top=p.y+'px';btn.style.setProperty('--hue',colorOf(n));btn.dataset.conceptId=n.id;
  btn.setAttribute('aria-label',n.title+(sub.length?', 하위 '+sub.length+'개 '+(expanded?'접기':'펼치기'):' 설명 보기'));
  if(sub.length)btn.setAttribute('aria-expanded',String(expanded));
  const title=document.createElement('span');title.className='node-name';title.textContent=n.title;
@@ -415,6 +421,7 @@ function mapCard(n,p){
    if(!pos)return;
    pos.x=nextX;pos.y=nextY;
    btn.style.left=nextX+'px';btn.style.top=nextY+'px';
+   positionConnectHandles();
    btn.classList.add('card-dragging');
    repaintMapConnections();
   };
@@ -451,6 +458,115 @@ function mapCard(n,p){
   selectConcept(n.id);
  });
  el('nodes').append(btn);
+ const connect=document.createElement('button');
+ connect.type='button';
+ connect.className='map-connect-handle';
+ connect.textContent='+';
+ connect.title='다른 개념 카드로 드래그하여 연결';
+ connect.setAttribute('aria-label',n.title+'에서 다른 개념으로 연결');
+ connect.dataset.sourceId=n.id;
+ connect.style.left=(p.x+116)+'px';
+ connect.style.top=p.y+'px';
+ connect.addEventListener('pointerdown',e=>startConnectionDrag(e,n.id,connect));
+ connect.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()});
+ el('nodes').append(connect);
+}
+
+let activeConnection=null;
+function positionConnectHandles(){
+ for(const handle of el('nodes').querySelectorAll('.map-connect-handle')){
+  const p=mapPositions.get(handle.dataset.sourceId);
+  if(p){handle.style.left=(p.x+116)+'px';handle.style.top=p.y+'px'}
+ }
+}
+function clientMapPoint(clientX,clientY){
+ const rect=el('mapArea').getBoundingClientRect();
+ return {
+  x:rect.width/2+(clientX-rect.left-rect.width/2-mapCamera.x)/mapCamera.scale,
+  y:rect.height/2+(clientY-rect.top-rect.height/2-mapCamera.y)/mapCamera.scale
+ };
+}
+function drawConnectionPreview(fromId,clientX,clientY){
+ let svg=el('connectionPreview');
+ if(!svg){
+  svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.id='connectionPreview';
+  svg.setAttribute('aria-hidden','true');
+  el('mapArea').append(svg);
+ }
+ const start=mapPositions.get(fromId);
+ if(!start)return;
+ const rect=el('mapArea').getBoundingClientRect();
+ const x1=rect.width/2+mapCamera.x+(start.x+116-rect.width/2)*mapCamera.scale;
+ const y1=rect.height/2+mapCamera.y+(start.y-rect.height/2)*mapCamera.scale;
+ const x2=clientX-rect.left,y2=clientY-rect.top;
+ svg.setAttribute('viewBox','0 0 '+rect.width+' '+rect.height);
+ svg.setAttribute('width',rect.width);
+ svg.setAttribute('height',rect.height);
+ svg.replaceChildren();
+ const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+ const bend=Math.min(Math.abs(x2-x1)*.4,120);
+ path.setAttribute('d','M '+x1+' '+y1+' C '+(x1+bend)+' '+y1+' '+(x2-bend)+' '+y2+' '+x2+' '+y2);
+ path.setAttribute('fill','none');path.setAttribute('stroke','#dcdce3');
+ path.setAttribute('stroke-width','2');path.setAttribute('stroke-dasharray','5 5');
+ path.setAttribute('stroke-linecap','round');
+ svg.append(path);
+}
+function startConnectionDrag(e,source,handle){
+ if(e.button!==0||activeConnection)return;
+ e.preventDefault();e.stopPropagation();
+ const id=e.pointerId;
+ activeConnection={id,source};
+ handle.setPointerCapture(id);
+ handle.classList.add('is-connecting');
+ el('mapArea').classList.add('connecting-concepts');
+ drawConnectionPreview(source,e.clientX,e.clientY);
+ const onMove=ev=>{
+  if(!activeConnection||ev.pointerId!==id)return;
+  drawConnectionPreview(source,ev.clientX,ev.clientY);
+  const t=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('.mind-node');
+  el('nodes').querySelectorAll('.connect-drop-target').forEach(n=>n.classList.remove('connect-drop-target'));
+  if(t&&t.dataset.conceptId!==source)t.classList.add('connect-drop-target');
+ };
+ const finish=ev=>{
+  if(!activeConnection||ev.pointerId!==id)return;
+  const target=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('.mind-node');
+  handle.removeEventListener('pointermove',onMove);
+  handle.removeEventListener('pointerup',finish);
+  handle.removeEventListener('pointercancel',cancel);
+  handle.removeEventListener('lostpointercapture',cancel);
+  handle.classList.remove('is-connecting');
+  el('mapArea').classList.remove('connecting-concepts');
+  el('nodes').querySelectorAll('.connect-drop-target').forEach(n=>n.classList.remove('connect-drop-target'));
+  el('connectionPreview')?.remove();
+  activeConnection=null;
+  if(handle.hasPointerCapture(id))handle.releasePointerCapture(id);
+  const dest=target?.dataset.conceptId;
+  if(!dest||dest===source)return;
+  if(links.some(l=>(l.a===source&&l.b===dest)||(l.a===dest&&l.b===source))||byId(source)?.parent===dest||byId(dest)?.parent===source){
+   toast('이미 연결된 개념입니다.');return;
+  }
+  links.push({a:source,b:dest});
+  save();repaintMapConnections();renderDetail();
+  toast('두 개념을 연결했습니다.');
+ };
+ const cancel=ev=>{
+  if(!activeConnection||ev.pointerId!==id)return;
+  handle.removeEventListener('pointermove',onMove);
+  handle.removeEventListener('pointerup',finish);
+  handle.removeEventListener('pointercancel',cancel);
+  handle.removeEventListener('lostpointercapture',cancel);
+  handle.classList.remove('is-connecting');
+  el('mapArea').classList.remove('connecting-concepts');
+  el('nodes').querySelectorAll('.connect-drop-target').forEach(n=>n.classList.remove('connect-drop-target'));
+  el('connectionPreview')?.remove();
+  activeConnection=null;
+  if(handle.hasPointerCapture(id))handle.releasePointerCapture(id);
+ };
+ handle.addEventListener('pointermove',onMove);
+ handle.addEventListener('pointerup',finish);
+ handle.addEventListener('pointercancel',cancel);
+ handle.addEventListener('lostpointercapture',cancel);
 }
 function mapConnection(from,to,container,variant,color){
  // Connect at the outside of each actual rectangle, not at the center.
