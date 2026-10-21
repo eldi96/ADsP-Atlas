@@ -80,6 +80,7 @@ html,body{background:#242426;color:#f4f4f7;font-family:-apple-system,BlinkMacSys
 .map-controls button{display:grid;place-items:center;width:42px;min-height:37px;padding:0;border:0;border-radius:9px;background:transparent;color:#f4f4f7;font-size:23px;font-weight:450}
 .map-controls button:hover{background:#52525a}.map-controls button:focus-visible{outline:2px solid #fff;outline-offset:1px}
 .map-controls .zoom-level{min-height:34px;width:48px;font-size:11px;color:#e6e6ec;font-variant-numeric:tabular-nums;font-weight:760}
+.map-controls .zoom-min-btn{font-size:12px;font-weight:700;border-top:1px solid #62626a;margin-top:3px}
 .panel-resizer{display:none}
 @media(min-width:831px){.panel-resizer{position:relative;z-index:20;display:flex;align-items:center;justify-content:center;cursor:col-resize;touch-action:none;background:#404047;border-left:1px solid #676770;border-right:1px solid #676770;outline:none;transition:background .15s ease}.panel-resizer:before{content:'';position:absolute;left:-7px;right:-7px;top:0;bottom:0}.panel-resizer:hover,.panel-resizer:focus-visible,.resizing-study-panel .panel-resizer{background:#696973}.resize-grip{display:block;width:3px;height:54px;border-radius:3px;background:#c2c2ca}.resizing-study-panel,.resizing-study-panel *{cursor:col-resize!important;user-select:none!important}}
 .detail{min-width:0;background:#303034!important;border-left:0;box-shadow:none}
@@ -173,6 +174,7 @@ html,body{background:#242426;color:#f4f4f7;font-family:-apple-system,BlinkMacSys
         <button id="zoomInBtn" type="button" aria-label="지도 확대">+</button>
         <button id="zoomResetBtn" type="button" class="zoom-level" aria-label="전체 지도에 맞추기"><span id="zoomLevel">100%</span></button>
         <button id="zoomOutBtn" type="button" aria-label="지도 축소">−</button>
+        <button id="zoomMinBtn" type="button" class="zoom-min-btn" title="펼친 전체 지도를 가장 작게 보기" aria-label="최대 축소">최소</button>
       </div>
     </section>
     <div class="panel-resizer" id="panelResizer" role="separator" aria-label="설명 영역 크기 조절" aria-orientation="vertical" aria-valuemin="20" aria-valuemax="80" aria-valuenow="35" tabindex="0" title="드래그로 설명 크기 변경 · 더블 클릭 시 기본값"><span class="resize-grip"></span></div>
@@ -733,6 +735,7 @@ function initMapCamera(){
  el('zoomInBtn').onclick=()=>zoomBy(.05);
  el('zoomOutBtn').onclick=()=>zoomBy(-.05);
  el('zoomResetBtn').onclick=fitMapToContent;
+ el('zoomMinBtn').onclick=()=>{const bounds=area.getBoundingClientRect();zoomMapAt(MAP_ZOOM_MIN,bounds.left+bounds.width/2,bounds.top+bounds.height/2)};
  area.addEventListener('pointerdown',e=>{
   if(mapPointer||e.button!==0||e.target.closest('button,a,input,textarea,select,.map-controls,.legend'))return;
   mapPointer={id:e.pointerId,x:e.clientX,y:e.clientY};
