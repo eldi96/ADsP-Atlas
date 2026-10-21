@@ -512,6 +512,20 @@ function drawConnectionPreview(fromId,clientX,clientY){
  path.setAttribute('stroke-linecap','round');
  svg.append(path);
 }
+function connectionDropTarget(clientX,clientY,source){
+ // DOM geometry stays correct after zoom, pan, and manually moving cards.
+ // Pointer capture can redirect pointer events, so never rely on event.target.
+ let winner=null,best=Infinity;
+ for(const card of el('nodes').querySelectorAll('.mind-node')){
+  if(card.dataset.conceptId===source)continue;
+  const r=card.getBoundingClientRect();
+  const pad=12;
+  if(clientX<r.left-pad||clientX>r.right+pad||clientY<r.top-pad||clientY>r.bottom+pad)continue;
+  const distance=Math.hypot(clientX-(r.left+r.right)/2,clientY-(r.top+r.bottom)/2);
+  if(distance<best){best=distance;winner=card}
+ }
+ return winner;
+}
 function startConnectionDrag(e,source,handle){
  if(e.button!==0||activeConnection)return;
  e.preventDefault();e.stopPropagation();
@@ -521,28 +535,34 @@ function startConnectionDrag(e,source,handle){
  handle.classList.add('is-connecting');
  el('mapArea').classList.add('connecting-concepts');
  drawConnectionPreview(source,e.clientX,e.clientY);
+ let currentTarget=null;
  const onMove=ev=>{
   if(!activeConnection||ev.pointerId!==id)return;
   drawConnectionPreview(source,ev.clientX,ev.clientY);
-  const t=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('.mind-node');
-  el('nodes').querySelectorAll('.connect-drop-target').forEach(n=>n.classList.remove('connect-drop-target'));
-  if(t&&t.dataset.conceptId!==source)t.classList.add('connect-drop-target');
+  const next=connectionDropTarget(ev.clientX,ev.clientY,source);
+  if(currentTarget!==next){
+   currentTarget?.classList.remove('connect-drop-target');
+   currentTarget=next;
+   currentTarget?.classList.add('connect-drop-target');
+  }
  };
- const finish=ev=>{
-  if(!activeConnection||ev.pointerId!==id)return;
-  const target=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('.mind-node');
+ const cleanup=()=>{
   handle.removeEventListener('pointermove',onMove);
   handle.removeEventListener('pointerup',finish);
   handle.removeEventListener('pointercancel',cancel);
   handle.removeEventListener('lostpointercapture',cancel);
+  currentTarget?.classList.remove('connect-drop-target');
   handle.classList.remove('is-connecting');
   el('mapArea').classList.remove('connecting-concepts');
-  el('nodes').querySelectorAll('.connect-drop-target').forEach(n=>n.classList.remove('connect-drop-target'));
   el('connectionPreview')?.remove();
   activeConnection=null;
   if(handle.hasPointerCapture(id))handle.releasePointerCapture(id);
-  const dest=target?.dataset.conceptId;
-  if(!dest||dest===source)return;
+ };
+ const finish=ev=>{
+  if(!activeConnection||ev.pointerId!==id)return;
+  const dest=connectionDropTarget(ev.clientX,ev.clientY,source)?.dataset.conceptId;
+  cleanup();
+  if(!dest||dest===source){toast('연결할 카드 위에 놓아 주세요.');return}
   if(links.some(l=>(l.a===source&&l.b===dest)||(l.a===dest&&l.b===source))||byId(source)?.parent===dest||byId(dest)?.parent===source){
    toast('이미 연결된 개념입니다.');return;
   }
@@ -550,19 +570,7 @@ function startConnectionDrag(e,source,handle){
   save();repaintMapConnections();renderDetail();
   toast('두 개념을 연결했습니다.');
  };
- const cancel=ev=>{
-  if(!activeConnection||ev.pointerId!==id)return;
-  handle.removeEventListener('pointermove',onMove);
-  handle.removeEventListener('pointerup',finish);
-  handle.removeEventListener('pointercancel',cancel);
-  handle.removeEventListener('lostpointercapture',cancel);
-  handle.classList.remove('is-connecting');
-  el('mapArea').classList.remove('connecting-concepts');
-  el('nodes').querySelectorAll('.connect-drop-target').forEach(n=>n.classList.remove('connect-drop-target'));
-  el('connectionPreview')?.remove();
-  activeConnection=null;
-  if(handle.hasPointerCapture(id))handle.releasePointerCapture(id);
- };
+ const cancel=ev=>{if(activeConnection&&ev.pointerId===id)cleanup()};
  handle.addEventListener('pointermove',onMove);
  handle.addEventListener('pointerup',finish);
  handle.addEventListener('pointercancel',cancel);
