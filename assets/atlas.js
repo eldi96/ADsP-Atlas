@@ -138,7 +138,27 @@ const STORAGE='adsp-atlas-v1';
 let nodes=[],links=[],focus=root,modalMode='',editColor='root',panelOpen=false,transitioning=false,searchMode='navigate',oldFocus=root;
 const el=id=>document.getElementById(id);const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const byId=id=>nodes.find(n=>n.id===id);const children=id=>nodes.filter(n=>n.parent===id);const colorOf=node=>COLORS[node?.color]||COLORS.root;const byTitle=n=>n?.title||'';
-function load(){try{const raw=localStorage.getItem(STORAGE);if(raw){const parsed=JSON.parse(raw);if(Array.isArray(parsed.nodes)&&Array.isArray(parsed.links)&&parsed.nodes.some(n=>n.id===root)&&parsed.nodes.length<1500){nodes=parsed.nodes;links=parsed.links.filter(l=>l.a&&l.b);return}}}catch(e){console.warn('Data could not be loaded',e)}nodes=structuredClone(defaultNodes);links=structuredClone(defaultLinks)}
+// Merge new built-in study cards into existing local/cloud snapshots without deleting user-created nodes.
+function mergeAtlasDefaults(doc){
+ if(!doc||!Array.isArray(doc.nodes)||!Array.isArray(doc.links))return doc;
+ const merged=structuredClone(doc),existing=new Set(merged.nodes.map(n=>n.id));
+ const titles=new Set(merged.nodes.map(n=>n.title));
+ const original=new Map(defaultNodes.map(n=>[n.id,n]));
+ const resolveParent=(n)=>{const p=original.get(n.parent);return p?merged.nodes.find(x=>x.title===p.title)?.id??n.parent:n.parent};
+ for(const n of defaultNodes){
+  if(existing.has(n.id)||titles.has(n.title))continue;
+  const copy=structuredClone(n);copy.parent=resolveParent(n);
+  if(copy.parent!==null&&!merged.nodes.some(x=>x.id===copy.parent))continue;
+  merged.nodes.push(copy);existing.add(copy.id);titles.add(copy.title);
+ }
+ const linkKeys=new Set(merged.links.map(l=>[l.a,l.b].sort().join('|')));
+ for(const l of defaultLinks){
+  if(!existing.has(l.a)||!existing.has(l.b))continue;
+  const key=[l.a,l.b].sort().join('|');if(!linkKeys.has(key)){merged.links.push(structuredClone(l));linkKeys.add(key)}
+ }
+ return merged;
+}
+function load(){try{const raw=localStorage.getItem(STORAGE);if(raw){const parsed=JSON.parse(raw);if(Array.isArray(parsed.nodes)&&Array.isArray(parsed.links)&&parsed.nodes.some(n=>n.id===root)&&parsed.nodes.length<1500){const merged=mergeAtlasDefaults(parsed);nodes=merged.nodes;links=merged.links.filter(l=>l.a&&l.b);if(merged.nodes.length!==parsed.nodes.length)persistLocal(false);return}}}catch(e){console.warn('Data could not be loaded',e)}nodes=structuredClone(defaultNodes);links=structuredClone(defaultLinks)}
 function persistLocal(markDirty=false){
  try{localStorage.setItem(STORAGE,JSON.stringify({nodes,links}));if(markDirty){cloudDirty=true;localStorage.setItem(CLOUD_DIRTY,'1')}return true}
  catch(e){toast('브라우저 저장에 실패했습니다. JSON 백업을 확인하세요.');return false}
@@ -599,7 +619,7 @@ function currentSnapshot(){return {nodes:structuredClone(nodes),links:structured
 function markClean(){cloudDirty=false;localStorage.removeItem(CLOUD_DIRTY)}
 function applyCloud(doc){
  if(!doc||!Array.isArray(doc.nodes)||!Array.isArray(doc.links)||!doc.nodes.some(n=>n.id===root)||doc.nodes.length>1500)throw new Error('클라우드 데이터 형식이 올바르지 않습니다.');
- nodes=doc.nodes;links=doc.links;focus=byId(focus)?focus:root;persistLocal(false);markClean();renderMap();renderDetail();
+ const merged=mergeAtlasDefaults(doc);nodes=merged.nodes;links=merged.links;focus=byId(focus)?focus:root;persistLocal(false);markClean();renderMap();renderDetail();
 }
 async function cloudSDK(){
  if(window.supabase?.createClient)return window.supabase;
