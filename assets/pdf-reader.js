@@ -32,9 +32,9 @@ function matchingPosition(entry,needle){
  return Math.max(0,height-(item.transform?.[5]||height));
 }
 async function renderPage(num,mark){if(!pdf)return;num=Math.max(1,Math.min(pdf.numPages,num));selected=num;count.textContent=num+' / '+pdf.numPages;pages.replaceChildren();const current=++token;const {page,items}=await pageText(num);if(current!==token)return;
-const viewport=page.getViewport({scale:scale*1.35});const wrapper=document.createElement('div');wrapper.className='pdf-page';const canvas=document.createElement('canvas');const ctx=canvas.getContext('2d');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);wrapper.append(canvas);pages.append(wrapper);
+const baseWidth=page.view[2]-page.view[0];const fit=Math.max(.2,(pages.clientWidth-24)/baseWidth);const viewport=page.getViewport({scale:fit*scale});const wrapper=document.createElement('div');wrapper.className='pdf-page';const canvas=document.createElement('canvas');const ctx=canvas.getContext('2d');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);canvas.style.width=viewport.width+'px';canvas.style.height=viewport.height+'px';wrapper.append(canvas);pages.append(wrapper);
 await page.render({canvasContext:ctx,viewport}).promise;if(current!==token)return;
-if(mark){const y=Math.max(0,Math.min(viewport.height-5,mark.y*scale*1.35));const line=document.createElement('div');line.className='pdf-marker';line.style.top=y+'px';wrapper.append(line);pages.scrollTop=Math.max(0,y-70)}
+if(mark){const y=Math.max(0,Math.min(viewport.height-5,mark.y*viewport.scale));const line=document.createElement('div');line.className='pdf-marker';line.style.top=y+'px';wrapper.append(line);pages.scrollTop=Math.max(0,y-70)}
 else pages.scrollTop=0;
 }
 async function locate(title){
@@ -82,7 +82,7 @@ async function locate(title){
  }
 }
 async function boot(){try{const mod=await import(LIB);pdfjs=mod;pdfjs.GlobalWorkerOptions.workerSrc=WORKER;pdf=await pdfjs.getDocument(PDF_URL).promise;loaded=true;info('PDF '+pdf.numPages+'페이지를 불러왔습니다. 왼쪽 카드를 선택하세요.');await renderPage(1);if(concept)await locate(concept)}
-catch(e){info('PDF를 열 수 없습니다.');pages.innerHTML='<div class="pdf-empty">PDF 파일을 GitHub 저장소의 <code>assets/ADsP.pdf</code> 경로에 추가해야 합니다.<br>원인: '+String(e.message||e).replace(/[<>]/g,'')+'</div>';}}
+catch(e){info('PDF를 열 수 없습니다.');pages.replaceChildren();const warning=document.createElement('div');warning.className='pdf-empty';warning.textContent='자동 위치 이동을 불러오지 못했습니다: '+String(e.message||e);pages.append(warning);const fallback=document.createElement('iframe');fallback.className='pdf-native-fallback';fallback.title='PDF 기본 뷰어';fallback.src=PDF_URL+'#page=1';pages.append(fallback);}}
 $('pdfPrev').onclick=()=>renderPage(selected-1);
 $('pdfNext').onclick=()=>renderPage(selected+1);
 $('pdfSmaller').onclick=()=>{scale=Math.max(.55,scale-.15);renderPage(selected)};
