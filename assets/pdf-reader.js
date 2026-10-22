@@ -40,22 +40,46 @@ else pages.scrollTop=0;
 async function locate(title){
  if(!pdf)return;
  concept=title;$('pdfConcept').textContent=title;
- info('PDF에서 ‘'+title+'’ 위치를 찾는 중…');
- const seq=++token,terms=variants(title).map(normalize);
- let found=null;
- // Page 1 is the cover; page 2 contains summary headings that must not be mistaken for full sections.
+ info('PDF에서 ‘'+title+'’의 실제 개념 제목을 확인하는 중…');
+ const request=++token,terms=variants(title).map(normalize).filter(Boolean);
+ const chapter=title.match(/^([123])과목/);
+ if(chapter){
+  const first={1:3,2:18,3:32}[Number(chapter[1])];
+  info('‘'+title+'’ · '+first+'페이지 (과목 시작)');
+  await renderPage(first);return;
+ }
+ if(title==='ADsP'){info('통합 개념서 · 표지');await renderPage(1);return;}
+ let headingHit=null, fallback=null;
  for(let i=3;i<=pdf.numPages;i++){
   const entry=await pageText(i);
-  if(seq!==token)return;
-  for(const needle of terms){
-   const y=matchingPosition(entry,needle);
-   if(y!==null){found={page:i,y};break}
+  if(request!==token)return;
+  const {items,page}=entry;
+  for(let k=0;k<items.length;k++){
+   const str=String(items[k].str||'').trim();
+   if(!/^\\d{2}-\\d{2}/.test(str))continue;
+   const heading=normalize(items.slice(k,k+3).map(x=>x.str).join('')).split('핵심개념')[0].replace(/^\\d{2}-\\d{2}/,'');
+   for(const term of terms){
+    if(heading===term||heading.includes(term)||term.includes(heading)&&heading.length>3){
+     const h=page.view[3],y=Math.max(0,h-(items[k].transform?.[5]||h));
+     const score=heading===term?100:80-Math.abs(heading.length-term.length);
+     if(!headingHit||score>headingHit.score)headingHit={page:i,y,score};
+    }
+   }
   }
-  if(found)break;
+  if(!fallback&&terms.length){
+   for(const term of terms){const y=matchingPosition(entry,term);if(y!==null){fallback={page:i,y};break;}}
+  }
+  if(headingHit?.score===100)break;
  }
- if(seq!==token)return;
- if(found){info('‘'+title+'’ · '+found.page+'페이지 (파란 선은 검색된 텍스트 위치)');await renderPage(found.page,found)}
- else{info('‘'+title+'’과 동일한 표현을 PDF에서 찾지 못했습니다. PDF 페이지를 직접 넘겨볼 수 있습니다.');await renderPage(selected)}
+ if(request!==token)return;
+ const found=headingHit||fallback;
+ if(found){
+  info('‘'+title+'’ · '+found.page+'페이지 ('+(headingHit?'개념 제목 일치':'본문 검색 결과, 위치 확인 권장')+')');
+  await renderPage(found.page,found);
+ }else{
+  info('‘'+title+'’에 해당하는 PDF 위치를 확인하지 못했습니다. 수동으로 이동하세요.');
+  await renderPage(selected);
+ }
 }
 async function boot(){try{const mod=await import(LIB);pdfjs=mod;pdfjs.GlobalWorkerOptions.workerSrc=WORKER;pdf=await pdfjs.getDocument(PDF_URL).promise;loaded=true;info('PDF '+pdf.numPages+'페이지를 불러왔습니다. 왼쪽 카드를 선택하세요.');await renderPage(1);if(concept)await locate(concept)}
 catch(e){info('PDF를 열 수 없습니다.');pages.innerHTML='<div class="pdf-empty">PDF 파일을 GitHub 저장소의 <code>assets/ADsP.pdf</code> 경로에 추가해야 합니다.<br>원인: '+String(e.message||e).replace(/[<>]/g,'')+'</div>';}}
@@ -63,6 +87,7 @@ $('pdfPrev').onclick=()=>renderPage(selected-1);
 $('pdfNext').onclick=()=>renderPage(selected+1);
 $('pdfSmaller').onclick=()=>{scale=Math.max(.55,scale-.15);renderPage(selected)};
 $('pdfLarger').onclick=()=>{scale=Math.min(2.5,scale+.15);renderPage(selected)};
+concept=document.querySelector('#detailHeader .detail-title')?.textContent?.trim()||'ADsP';
 window.addEventListener('atlas:concept',e=>{concept=e.detail?.title||'';$('pdfConcept').textContent=concept||'PDF 개념서';if(loaded)locate(concept)});
 boot();
 })();
