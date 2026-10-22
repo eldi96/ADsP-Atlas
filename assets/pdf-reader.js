@@ -17,21 +17,47 @@ let pdf=null,pdfjs=null,scale=1,selected=1,token=0,concept='',cache=new Map(),lo
 function info(t){status.textContent=t}
 function normalize(s){return String(s||'').toLowerCase().replace(/[\s\u00ad·•:()（）\-–—_]+/g,'')}
 function variants(t){let a=[t];const stripped=t.replace(/^\d+과목\s*[·.]\s*/,'').replace(/^\d+[-.]\d+\s*/,'');if(stripped!==t)a.push(stripped);return a.filter(x=>normalize(x).length>=3)}
-async function pageText(num){if(cache.has(num))return cache.get(num);const p=await pdf.getPage(num);const c=await p.getTextContent();const v={page:p,items:c.items,text:normalize(c.items.map(x=>x.str).join(' '))};cache.set(num,v);return v}
+async function pageText(num){
+ if(cache.has(num))return cache.get(num);
+ const p=await pdf.getPage(num),c=await p.getTextContent(),items=c.items;
+ let text='',starts=[];
+ for(const item of items){starts.push(text.length);text+=normalize(item.str)}
+ const v={page:p,items,text,starts};cache.set(num,v);return v
+}
+function matchingPosition(entry,needle){
+ const idx=entry.text.indexOf(needle);
+ if(idx<0)return null;
+ let k=0;while(k+1<entry.starts.length&&entry.starts[k+1]<=idx)k++;
+ const item=entry.items[k],height=entry.page.view[3];
+ return Math.max(0,height-(item.transform?.[5]||height));
+}
 async function renderPage(num,mark){if(!pdf)return;num=Math.max(1,Math.min(pdf.numPages,num));selected=num;count.textContent=num+' / '+pdf.numPages;pages.replaceChildren();const current=++token;const {page,items}=await pageText(num);if(current!==token)return;
 const viewport=page.getViewport({scale:scale*1.35});const wrapper=document.createElement('div');wrapper.className='pdf-page';const canvas=document.createElement('canvas');const ctx=canvas.getContext('2d');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);wrapper.append(canvas);pages.append(wrapper);
 await page.render({canvasContext:ctx,viewport}).promise;if(current!==token)return;
 if(mark){const y=Math.max(0,Math.min(viewport.height-5,mark.y*scale*1.35));const line=document.createElement('div');line.className='pdf-marker';line.style.top=y+'px';wrapper.append(line);pages.scrollTop=Math.max(0,y-70)}
 else pages.scrollTop=0;
 }
-async function locate(title){if(!pdf)return;concept=title;$('pdfConcept').textContent=title;info('PDF에서 ‘'+title+'’ 위치를 찾는 중…');const seq=++token;const terms=variants(title).map(normalize);
-let found=null;
-for(let i=1;i<=pdf.numPages;i++){const entry=await pageText(i);if(seq!==token)return;const match=terms.find(x=>entry.text.includes(x));if(match){let y=0;for(let k=0;k<entry.items.length;k++){const item=entry.items[k];if(terms.some(x=>normalize(item.str).includes(x))){const h=entry.page.view[3];y=Math.max(0,h-(item.transform?.[5]||h));break}}found={page:i,y};break}}
-if(seq!==token)return;
-if(found){info('‘'+title+'’ · '+found.page+'페이지에서 발견 (파란 선은 추정 위치)');await renderPage(found.page,found)}
-else{info('‘'+title+'’의 정확한 제목을 PDF에서 찾지 못했습니다. 수동으로 페이지를 이동할 수 있습니다.');await renderPage(selected)}
+async function locate(title){
+ if(!pdf)return;
+ concept=title;$('pdfConcept').textContent=title;
+ info('PDF에서 ‘'+title+'’ 위치를 찾는 중…');
+ const seq=++token,terms=variants(title).map(normalize);
+ let found=null;
+ // Page 1 is the cover; page 2 contains summary headings that must not be mistaken for full sections.
+ for(let i=3;i<=pdf.numPages;i++){
+  const entry=await pageText(i);
+  if(seq!==token)return;
+  for(const needle of terms){
+   const y=matchingPosition(entry,needle);
+   if(y!==null){found={page:i,y};break}
+  }
+  if(found)break;
+ }
+ if(seq!==token)return;
+ if(found){info('‘'+title+'’ · '+found.page+'페이지 (파란 선은 검색된 텍스트 위치)');await renderPage(found.page,found)}
+ else{info('‘'+title+'’과 동일한 표현을 PDF에서 찾지 못했습니다. PDF 페이지를 직접 넘겨볼 수 있습니다.');await renderPage(selected)}
 }
-async function boot(){try{const mod=await import(LIB);pdfjs=mod;pdfjs.GlobalWorkerOptions.workerSrc=WORKER;const response=await fetch(PDF_URL,{method:'HEAD'});if(!response.ok)throw new Error('PDF 파일이 저장소에 없습니다 (HTTP '+response.status+')');pdf=await pdfjs.getDocument(PDF_URL).promise;loaded=true;info('PDF '+pdf.numPages+'페이지를 불러왔습니다. 왼쪽 카드를 선택하세요.');await renderPage(1);if(concept)await locate(concept)}
+async function boot(){try{const mod=await import(LIB);pdfjs=mod;pdfjs.GlobalWorkerOptions.workerSrc=WORKER;pdf=await pdfjs.getDocument(PDF_URL).promise;loaded=true;info('PDF '+pdf.numPages+'페이지를 불러왔습니다. 왼쪽 카드를 선택하세요.');await renderPage(1);if(concept)await locate(concept)}
 catch(e){info('PDF를 열 수 없습니다.');pages.innerHTML='<div class="pdf-empty">PDF 파일을 GitHub 저장소의 <code>assets/adsp-guide.pdf</code> 경로에 추가해야 합니다.<br>원인: '+String(e.message||e).replace(/[<>]/g,'')+'</div>';}}
 $('pdfPrev').onclick=()=>renderPage(selected-1);
 $('pdfNext').onclick=()=>renderPage(selected+1);
