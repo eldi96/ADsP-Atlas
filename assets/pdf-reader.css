@@ -23,7 +23,7 @@
 .pdf-page{isolation:isolate}
 .pdf-highlight-layer{position:absolute;inset:0;width:100%;height:100%;z-index:2;overflow:hidden;pointer-events:none}
 .pdf-mark-active .pdf-highlight-layer{pointer-events:auto;touch-action:none;cursor:crosshair}
-.pdf-erase-active .pdf-highlight-layer{pointer-events:none}
+.pdf-erase-active .pdf-highlight-layer{pointer-events:auto;touch-action:none;cursor:cell}
 .pdf-highlight-stroke,.pdf-highlight-rect{mix-blend-mode:multiply;pointer-events:none}
 .pdf-erase-active .pdf-highlight-stroke,.pdf-erase-active .pdf-highlight-rect{pointer-events:visiblePainted;cursor:pointer}
 .pdf-erase-active .pdf-highlight-stroke{stroke-opacity:0.9}
