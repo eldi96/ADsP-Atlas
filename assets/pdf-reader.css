@@ -18,12 +18,16 @@
 
 .pdf-bottom-space{width:1px;flex:none;pointer-events:none}
 
-/* Persistent PDF annotations. Coordinates are page-relative and survive zoom. */
+
+/* Freehand PDF highlighter: visible pencil strokes stored per page. */
 .pdf-page{isolation:isolate}
-.pdf-highlight-layer{position:absolute;inset:0;z-index:2;pointer-events:none;touch-action:auto}
+.pdf-highlight-layer{position:absolute;inset:0;width:100%;height:100%;z-index:2;overflow:hidden;pointer-events:none}
 .pdf-mark-active .pdf-highlight-layer{pointer-events:auto;touch-action:none;cursor:crosshair}
 .pdf-erase-active .pdf-highlight-layer{pointer-events:none}
-.pdf-highlight-rect{position:absolute;background:rgba(255,230,54,.46);mix-blend-mode:multiply;border-radius:2px;pointer-events:none}
-.pdf-highlight-rect.is-draft{background:rgba(255,211,0,.34);outline:1px dashed rgba(181,126,0,.8)}
-.pdf-erase-active .pdf-highlight-rect{pointer-events:auto;cursor:pointer}
+.pdf-highlight-stroke,.pdf-highlight-rect{mix-blend-mode:multiply;pointer-events:none}
+.pdf-erase-active .pdf-highlight-stroke,.pdf-erase-active .pdf-highlight-rect{pointer-events:visiblePainted;cursor:pointer}
+.pdf-erase-active .pdf-highlight-stroke{stroke-opacity:0.9}
+.pdf-highlight-stroke.is-draft{stroke:rgba(255,196,0,.58)}
 .pdf-toolbar button[aria-pressed="true"]{background:#f5d94f;color:#27240d;border-color:#ebc641;font-weight:700}
+.pdf-pen-control{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#dddde6;white-space:nowrap}
+.pdf-pen-control select{background:#48484f;color:#f4f4f7;border:1px solid #6a6a72;border-radius:6px;padding:6px;font-size:12px}
