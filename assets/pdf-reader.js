@@ -70,17 +70,40 @@ function installHighlightLayer(wrapper,viewport,number){
   }else return null;
   if(draft)element.classList.add('is-draft');
   element.setAttribute('data-annotation','true');svg.append(element);
-  if(!draft)element.addEventListener('pointerdown',e=>{
-   if(highlightMode!=='erase'||e.button!==0)return;
-   e.preventDefault();e.stopPropagation();
-   highlights[number]=(highlights[number]||[]).filter(v=>v!==record);
-   saveHighlights();element.remove();
-  });
+
   return element;
  }
  for(const record of Array.isArray(highlights[number])?highlights[number]:[])draw(record);
  let active=null;
+ function nearStroke(mark,p){
+  const px=p[0]*W,py=p[1]*H;
+  if(mark.kind!=='stroke'){
+   return px>=mark.x*W-6&&px<=(mark.x+mark.w)*W+6&&py>=mark.y*H-6&&py<=(mark.y+mark.h)*H+6;
+  }
+  const path=mark.points||[],radius=Math.max(9,(mark.size||18)*W/2000+7);
+  let closest=Infinity;
+  for(let k=0;k<path.length;k++){
+   const a=[path[k][0]*W,path[k][1]*H],b=k+1<path.length?[path[k+1][0]*W,path[k+1][1]*H]:a;
+   const dx=b[0]-a[0],dy=b[1]-a[1],den=dx*dx+dy*dy;
+   const t=den?Math.max(0,Math.min(1,((px-a[0])*dx+(py-a[1])*dy)/den)):0;
+   closest=Math.min(closest,Math.hypot(px-a[0]-t*dx,py-a[1]-t*dy));
+  }
+  return closest<=radius;
+ }
  svg.addEventListener('pointerdown',e=>{
+  if(highlightMode==='erase'&&e.button===0){
+   e.preventDefault();
+   const p=where(e),current=highlights[number]||[];
+   for(let i=current.length-1;i>=0;i--){
+    if(nearStroke(current[i],p)){
+     current.splice(i,1);saveHighlights();
+     const nodes=svg.querySelectorAll('[data-annotation]');
+     nodes[i]?.remove();
+     break;
+    }
+   }
+   return;
+  }
   if(highlightMode!=='mark'||e.button!==0||!e.isPrimary)return;
   e.preventDefault();
   const first=where(e);
