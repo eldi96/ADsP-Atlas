@@ -10,7 +10,7 @@ const detail=$('detail');
 if(!detail)return;
 detail.classList.add('pdf-reader');
 const shell=document.createElement('div');shell.className='pdf-shell';
-shell.innerHTML='<div class="pdf-toolbar"><strong id="pdfConcept">PDF 개념서</strong><button id="pdfPrev" title="이전 페이지">←</button><span id="pdfCount">—</span><button id="pdfNext" title="다음 페이지">→</button><button id="pdfSmaller" title="축소">−</button><button id="pdfLarger" title="확대">＋</button><button id="pdfEdit" title="선택한 개념 수정">수정</button><button id="pdfAdd" title="하위 개념 추가">추가</button><a id="pdfOpen" href="'+PDF_URL+'" target="_blank" rel="noopener">원본 PDF ↗</a></div><div class="pdf-status" id="pdfStatus" role="status">PDF 준비 중…</div><div class="pdf-pages" id="pdfPages"></div>';
+shell.innerHTML='<div class="pdf-toolbar"><strong id="pdfConcept">PDF 개념서</strong><button id="pdfPrev" title="이전 페이지">←</button><span id="pdfCount">—</span><button id="pdfNext" title="다음 페이지">→</button><button id="pdfSmaller" title="축소">−</button><button id="pdfLarger" title="확대">＋</button><a id="pdfOpen" href="'+PDF_URL+'" target="_blank" rel="noopener">원본 PDF ↗</a></div><div class="pdf-status" id="pdfStatus" role="status">PDF 준비 중…</div><div class="pdf-pages" id="pdfPages"></div>';
 detail.append(shell);
 const pages=$('pdfPages'),status=$('pdfStatus'),count=$('pdfCount');
 let pdf=null,pdfjs=null,scale=1,selected=1,token=0,concept='',cache=new Map(),loaded=false,conceptIndex=[],activeMark=null;
@@ -94,8 +94,6 @@ async function locate(title){
 }
 async function boot(){try{const idxResponse=await fetch('assets/pdf-index.json');if(idxResponse.ok){const data=await idxResponse.json();if(data.pdf==='ADsP.pdf'&&data.concepts?.length===241)conceptIndex=data.concepts;}const mod=await import(LIB);pdfjs=mod;pdfjs.GlobalWorkerOptions.workerSrc=WORKER;pdf=await pdfjs.getDocument(PDF_URL).promise;loaded=true;info('PDF '+pdf.numPages+'페이지를 불러왔습니다. 왼쪽 카드를 선택하세요.');await renderPage(1);if(concept)await locate(concept)}
 catch(e){info('PDF를 열 수 없습니다.');pages.replaceChildren();const warning=document.createElement('div');warning.className='pdf-empty';warning.textContent='자동 위치 이동을 불러오지 못했습니다: '+String(e.message||e);pages.append(warning);const fallback=document.createElement('iframe');fallback.className='pdf-native-fallback';fallback.title='PDF 기본 뷰어';fallback.src=PDF_URL+'#page=1';pages.append(fallback);}}
-$('pdfEdit').onclick=()=>document.querySelector('#detailHeader .panel-buttons .icon-btn')?.click();
-$('pdfAdd').onclick=()=>$('childAddBtn')?.click();
 $('pdfPrev').onclick=()=>renderPage(selected-1);
 $('pdfNext').onclick=()=>renderPage(selected+1);
 $('pdfSmaller').onclick=()=>{scale=Math.max(.55,scale-.15);renderPage(selected,activeMark)};
