@@ -1,8 +1,8 @@
-/* PDF-linked reader. A real PDF must be committed at assets/adsp-guide.pdf.
+/* PDF-linked reader. A real PDF must be committed at assets/ADsP.pdf.
    pdf.js is loaded from a public CDN; no API keys or user data are sent. */
 (()=>{
 'use strict';
-const PDF_URL='assets/adsp-guide.pdf';
+const PDF_URL='assets/ADsP.pdf';
 const LIB='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
 const WORKER='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
 const $=id=>document.getElementById(id);
@@ -58,7 +58,7 @@ async function locate(title){
  else{info('‘'+title+'’과 동일한 표현을 PDF에서 찾지 못했습니다. PDF 페이지를 직접 넘겨볼 수 있습니다.');await renderPage(selected)}
 }
 async function boot(){try{const mod=await import(LIB);pdfjs=mod;pdfjs.GlobalWorkerOptions.workerSrc=WORKER;pdf=await pdfjs.getDocument(PDF_URL).promise;loaded=true;info('PDF '+pdf.numPages+'페이지를 불러왔습니다. 왼쪽 카드를 선택하세요.');await renderPage(1);if(concept)await locate(concept)}
-catch(e){info('PDF를 열 수 없습니다.');pages.innerHTML='<div class="pdf-empty">PDF 파일을 GitHub 저장소의 <code>assets/adsp-guide.pdf</code> 경로에 추가해야 합니다.<br>원인: '+String(e.message||e).replace(/[<>]/g,'')+'</div>';}}
+catch(e){info('PDF를 열 수 없습니다.');pages.innerHTML='<div class="pdf-empty">PDF 파일을 GitHub 저장소의 <code>assets/ADsP.pdf</code> 경로에 추가해야 합니다.<br>원인: '+String(e.message||e).replace(/[<>]/g,'')+'</div>';}}
 $('pdfPrev').onclick=()=>renderPage(selected-1);
 $('pdfNext').onclick=()=>renderPage(selected+1);
 $('pdfSmaller').onclick=()=>{scale=Math.max(.55,scale-.15);renderPage(selected)};
