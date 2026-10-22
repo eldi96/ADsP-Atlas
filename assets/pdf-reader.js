@@ -35,7 +35,10 @@ function matchingPosition(entry,needle){
 async function renderPage(num,mark){if(!pdf)return;num=Math.max(1,Math.min(pdf.numPages,num));selected=num;activeMark=mark||null;count.textContent=num+' / '+pdf.numPages;pages.replaceChildren();const current=++token;const {page,items}=await pageText(num);if(current!==token)return;
 const baseWidth=page.view[2]-page.view[0];const fit=Math.max(.2,(pages.clientWidth-24)/baseWidth);const viewport=page.getViewport({scale:fit*scale});const wrapper=document.createElement('div');wrapper.className='pdf-page';const canvas=document.createElement('canvas');const ctx=canvas.getContext('2d');const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.ceil(viewport.width*dpr);canvas.height=Math.ceil(viewport.height*dpr);canvas.style.width=viewport.width+'px';canvas.style.height=viewport.height+'px';wrapper.append(canvas);pages.append(wrapper);
 await page.render({canvasContext:ctx,viewport,transform:[dpr,0,0,dpr,0,0]}).promise;if(current!==token)return;
-if(mark){const y=Math.max(0,Math.min(viewport.height-5,mark.y*viewport.scale));const line=document.createElement('div');line.className='pdf-marker';line.style.top=y+'px';wrapper.append(line);pages.scrollTop=Math.max(0,y-70)}
+// A section near the bottom of the page must be able to reach the top of the viewport.
+// Without extra scroll room, scrollTop is clamped and earlier sections remain visible.
+const bottomSpace=document.createElement('div');bottomSpace.className='pdf-bottom-space';bottomSpace.style.height=Math.max(0,pages.clientHeight-80)+'px';pages.append(bottomSpace);
+if(mark){const y=Math.max(0,Math.min(viewport.height-5,mark.y*viewport.scale));const line=document.createElement('div');line.className='pdf-marker';line.style.top=y+'px';wrapper.append(line);pages.scrollTop=Math.max(0,y-64)}
 else pages.scrollTop=0;
 }
 async function locate(title){
@@ -92,7 +95,7 @@ $('pdfAdd').onclick=()=>$('childAddBtn')?.click();
 $('pdfPrev').onclick=()=>renderPage(selected-1);
 $('pdfNext').onclick=()=>renderPage(selected+1);
 $('pdfSmaller').onclick=()=>{scale=Math.max(.55,scale-.15);renderPage(selected,activeMark)};
-$('pdfLarger').onclick=()=>{scale=Math.min(2.5,scale+.15);renderPage(selected)};
+$('pdfLarger').onclick=()=>{scale=Math.min(2.5,scale+.15);renderPage(selected,activeMark)};
 let resizeTimer;new ResizeObserver(()=>{if(!loaded)return;clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>renderPage(selected,activeMark),130)}).observe(pages);
 concept=document.querySelector('#detailHeader .detail-title')?.textContent?.trim()||'ADsP';
 window.addEventListener('atlas:concept',e=>{concept=e.detail?.title||'';$('pdfConcept').textContent=concept||'PDF 개념서';if(loaded)locate(concept)});
