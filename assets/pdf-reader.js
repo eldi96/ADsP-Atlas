@@ -38,8 +38,12 @@ await page.render({canvasContext:ctx,viewport,transform:[dpr,0,0,dpr,0,0]}).prom
 // A section near the bottom of the page must be able to reach the top of the viewport.
 // Without extra scroll room, scrollTop is clamped and earlier sections remain visible.
 const bottomSpace=document.createElement('div');bottomSpace.className='pdf-bottom-space';bottomSpace.style.height=Math.max(0,pages.clientHeight-80)+'px';pages.append(bottomSpace);
-if(mark){const y=Math.max(0,Math.min(viewport.height-5,mark.y*viewport.scale));const line=document.createElement('div');line.className='pdf-marker';line.style.top=y+'px';wrapper.append(line);pages.scrollTop=Math.max(0,y-64)}
-else pages.scrollTop=0;
+if(mark){
+ // Position the selected section just below the top of the reading area.
+ // Do not draw an overlay: the previous highlight obscured heading text.
+ const y=Math.max(0,Math.min(viewport.height-5,mark.y*viewport.scale));
+ pages.scrollTop=Math.max(0,y+4);
+}else pages.scrollTop=0;
 }
 async function locate(title){
  if(!pdf)return;
