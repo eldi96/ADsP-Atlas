@@ -17,3 +17,13 @@
 .pdf-native-fallback{display:block;width:100%;min-height:70vh;border:0;background:#fff}
 
 .pdf-bottom-space{width:1px;flex:none;pointer-events:none}
+
+/* Persistent PDF annotations. Coordinates are page-relative and survive zoom. */
+.pdf-page{isolation:isolate}
+.pdf-highlight-layer{position:absolute;inset:0;z-index:2;pointer-events:none;touch-action:auto}
+.pdf-mark-active .pdf-highlight-layer{pointer-events:auto;touch-action:none;cursor:crosshair}
+.pdf-erase-active .pdf-highlight-layer{pointer-events:none}
+.pdf-highlight-rect{position:absolute;background:rgba(255,230,54,.46);mix-blend-mode:multiply;border-radius:2px;pointer-events:none}
+.pdf-highlight-rect.is-draft{background:rgba(255,211,0,.34);outline:1px dashed rgba(181,126,0,.8)}
+.pdf-erase-active .pdf-highlight-rect{pointer-events:auto;cursor:pointer}
+.pdf-toolbar button[aria-pressed="true"]{background:#f5d94f;color:#27240d;border-color:#ebc641;font-weight:700}
