@@ -10,9 +10,11 @@
 .pdf-pages{flex:1;min-height:0;overflow:auto;padding:16px 12px;scrollbar-color:#777 #303034}
 .pdf-page{position:relative;margin:0 auto 16px;width:fit-content;max-width:none;background:white;box-shadow:0 4px 15px #1118}
 .pdf-page canvas{display:block;max-width:none;height:auto}
-.pdf-marker{position:absolute;left:0;right:0;height:4px;background:#238aff;box-shadow:0 0 0 4px #238aff33;pointer-events:none}
+.pdf-marker{position:absolute;left:-6px;width:5px;height:36px;transform:translateY(-7px);background:#238aff;border-radius:3px;box-shadow:0 0 0 3px #238aff33;pointer-events:none}
 .pdf-empty{padding:24px;line-height:1.8;color:#d7d7de}
 .pdf-empty code{color:#fff}
 @media(max-width:830px){.pdf-toolbar{padding:9px}.pdf-pages{padding:8px}}
 
 .pdf-native-fallback{display:block;width:100%;min-height:70vh;border:0;background:#fff}
+
+.pdf-bottom-space{width:1px;flex:none;pointer-events:none}
