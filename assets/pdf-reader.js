@@ -10,7 +10,7 @@ const detail=$('detail');
 if(!detail)return;
 detail.classList.add('pdf-reader');
 const shell=document.createElement('div');shell.className='pdf-shell';
-shell.innerHTML='<div class="pdf-toolbar"><strong id="pdfConcept">PDF 개념서</strong><button id="pdfPrev" title="이전 페이지">←</button><span id="pdfCount">—</span><button id="pdfNext" title="다음 페이지">→</button><button id="pdfSmaller" title="축소">−</button><button id="pdfLarger" title="확대">＋</button><button id="pdfHighlight" type="button" aria-pressed="false" title="드래그해 노란 형광펜 표시">형광펜</button><button id="pdfEraser" type="button" aria-pressed="false" title="표시를 클릭해 삭제">지우개</button><button id="pdfClear" type="button" title="현재 페이지의 형광펜 모두 삭제">이 페이지 지우기</button><a id="pdfOpen" href="'+PDF_URL+'" target="_blank" rel="noopener">원본 PDF ↗</a></div><div class="pdf-status" id="pdfStatus" role="status">PDF 준비 중…</div><div class="pdf-pages" id="pdfPages"></div>';
+shell.innerHTML='<div class="pdf-toolbar"><strong id="pdfConcept">PDF 개념서</strong><button id="pdfPrev" title="이전 페이지">←</button><span id="pdfCount">—</span><button id="pdfNext" title="다음 페이지">→</button><button id="pdfSmaller" title="축소">−</button><button id="pdfLarger" title="확대">＋</button><button id="pdfHighlight" type="button" aria-pressed="false" title="연필처럼 자유롭게 그리는 형광펜">형광펜</button><label class="pdf-pen-control" for="pdfPenSize">굵기 <select id="pdfPenSize" aria-label="형광펜 굵기"><option value="10">얇게</option><option value="18" selected>보통</option><option value="30">굵게</option></select></label><button id="pdfEraser" type="button" aria-pressed="false" title="표시를 클릭해 삭제">지우개</button><button id="pdfClear" type="button" title="현재 페이지의 형광펜 모두 삭제">이 페이지 지우기</button><a id="pdfOpen" href="'+PDF_URL+'" target="_blank" rel="noopener">원본 PDF ↗</a></div><div class="pdf-status" id="pdfStatus" role="status">PDF 준비 중…</div><div class="pdf-pages" id="pdfPages"></div>';
 detail.append(shell);
 const pages=$('pdfPages'),status=$('pdfStatus'),count=$('pdfCount');
 let pdf=null,pdfjs=null,scale=1,selected=1,token=0,concept='',cache=new Map(),loaded=false,conceptIndex=[],activeMark=null;
@@ -30,60 +30,88 @@ function setHighlightMode(next){
  $('pdfEraser').setAttribute('aria-pressed',String(highlightMode==='erase'));
  pages.classList.toggle('pdf-mark-active',highlightMode==='mark');
  pages.classList.toggle('pdf-erase-active',highlightMode==='erase');
- info(highlightMode==='mark'?'형광펜 ON · PDF 위에서 드래그하여 표시하세요.':highlightMode==='erase'?'지우개 ON · 노란 표시를 클릭하면 삭제됩니다.':'PDF 보기 · 형광펜을 켜면 드래그해 표시할 수 있습니다.');
+ info(highlightMode==='mark'?'형광펜 ON · 연필처럼 누른 채 자유롭게 그리세요.':highlightMode==='erase'?'지우개 ON · 지울 선을 클릭하세요.':'PDF 보기 · 형광펜을 켜면 연필처럼 그릴 수 있습니다.');
 }
 function installHighlightLayer(wrapper,viewport,number){
- const overlay=document.createElement('div');overlay.className='pdf-highlight-layer';overlay.setAttribute('aria-label','PDF 형광펜 표시 영역');
- wrapper.append(overlay);
- function addRect(rect,isDraft=false){
-  const div=document.createElement('div');div.className='pdf-highlight-rect'+(isDraft?' is-draft':'');
-  div.style.left=(rect.x*100)+'%';div.style.top=(rect.y*100)+'%';
-  div.style.width=(rect.w*100)+'%';div.style.height=(rect.h*100)+'%';
-  if(!isDraft)div.title='형광펜 표시 · 지우개 모드에서 클릭해 삭제';
-  overlay.append(div);return div;
+ const NS='http://www.w3.org/2000/svg', W=viewport.width,H=viewport.height;
+ const svg=document.createElementNS(NS,'svg');
+ svg.classList.add('pdf-highlight-layer');
+ svg.setAttribute('viewBox','0 0 '+W+' '+H);
+ svg.setAttribute('aria-label','자유형 형광펜 그리기 영역');
+ wrapper.append(svg);
+ const make=(name)=>document.createElementNS(NS,name);
+ const clamp=n=>Math.max(0,Math.min(1,n));
+ const where=e=>{const b=svg.getBoundingClientRect();return [clamp((e.clientX-b.left)/b.width),clamp((e.clientY-b.top)/b.height)]};
+ function geometry(stroke){
+  // Store a normalized path so marks line up when the page is zoomed or resized.
+  const pairs=stroke.points||[];
+  if(!pairs.length)return '';
+  const coord=p=>[Math.round(p[0]*W*10)/10,Math.round(p[1]*H*10)/10];
+  let d='M'+coord(pairs[0]).join(' ');
+  if(pairs.length===1){const p=coord(pairs[0]);return d+' L'+(p[0]+.01)+' '+p[1]}
+  for(let i=1;i<pairs.length;i++)d+=' L'+coord(pairs[i]).join(' ');
+  return d;
  }
- const list=Array.isArray(highlights[number])?highlights[number]:[];
- for(const rect of list){
-  if(!rect||![rect.x,rect.y,rect.w,rect.h].every(v=>Number.isFinite(v)&&v>=0&&v<=1))continue;
-  const element=addRect(rect);
-  element.addEventListener('click',e=>{
-   if(highlightMode!=='erase')return;
-   e.stopPropagation();
-   highlights[number]=(highlights[number]||[]).filter(x=>x!==rect);
+ function draw(record,draft=false){
+  let element;
+  if(record.kind==='stroke'&&Array.isArray(record.points)){
+   element=make('path');element.setAttribute('d',geometry(record));
+   element.setAttribute('fill','none');element.setAttribute('stroke','rgba(245,211,15,0.44)');
+   element.setAttribute('stroke-width',String((record.size||18)*W/1000));
+   element.setAttribute('stroke-linecap','round');element.setAttribute('stroke-linejoin','round');
+   element.classList.add('pdf-highlight-stroke');
+  }else if([record.x,record.y,record.w,record.h].every(n=>Number.isFinite(n))){
+   // Keep annotations saved by the previous rectangle highlighter.
+   element=make('rect');
+   element.setAttribute('x',String(record.x*W));element.setAttribute('y',String(record.y*H));
+   element.setAttribute('width',String(record.w*W));element.setAttribute('height',String(record.h*H));
+   element.setAttribute('fill','rgba(245,211,15,0.4)');
+   element.classList.add('pdf-highlight-rect');
+  }else return null;
+  if(draft)element.classList.add('is-draft');
+  element.setAttribute('data-annotation','true');svg.append(element);
+  if(!draft)element.addEventListener('pointerdown',e=>{
+   if(highlightMode!=='erase'||e.button!==0)return;
+   e.preventDefault();e.stopPropagation();
+   highlights[number]=(highlights[number]||[]).filter(v=>v!==record);
    saveHighlights();element.remove();
   });
+  return element;
  }
- const clamp=n=>Math.max(0,Math.min(1,n));
- const point=e=>{
-  const b=overlay.getBoundingClientRect();
-  return {x:clamp((e.clientX-b.left)/b.width),y:clamp((e.clientY-b.top)/b.height)};
- };
+ for(const record of Array.isArray(highlights[number])?highlights[number]:[])draw(record);
  let active=null;
- overlay.addEventListener('pointerdown',e=>{
+ svg.addEventListener('pointerdown',e=>{
   if(highlightMode!=='mark'||e.button!==0||!e.isPrimary)return;
-  e.preventDefault();const at=point(e);const draft=addRect({x:at.x,y:at.y,w:0,h:0},true);
-  active={id:e.pointerId,from:at,to:at,element:draft};
-  overlay.setPointerCapture(e.pointerId);
+  e.preventDefault();
+  const first=where(e);
+  const size=Math.max(6,Math.min(42,Number($('pdfPenSize').value)||18));
+  const record={kind:'stroke',size,points:[first]};
+  const element=draw(record,true);
+  active={id:e.pointerId,record,element,last:first};
+  svg.setPointerCapture(e.pointerId);
  });
- overlay.addEventListener('pointermove',e=>{
+ svg.addEventListener('pointermove',e=>{
   if(!active||active.id!==e.pointerId)return;
-  active.to=point(e);
-  const left=Math.min(active.from.x,active.to.x),top=Math.min(active.from.y,active.to.y);
-  const width=Math.abs(active.to.x-active.from.x),height=Math.abs(active.to.y-active.from.y);
-  Object.assign(active.element.style,{left:(left*100)+'%',top:(top*100)+'%',width:(width*100)+'%',height:(height*100)+'%'});
+  const samples=typeof e.getCoalescedEvents==='function'?e.getCoalescedEvents():[e];
+  for(const sample of samples){
+   const pt=where(sample),last=active.last;
+   if(Math.hypot((pt[0]-last[0])*W,(pt[1]-last[1])*H)<1.1)continue;
+   active.record.points.push(pt);active.last=pt;
+  }
+  active.element.setAttribute('d',geometry(active.record));
  });
- function finish(e,commit){
-  if(!active||active.id!==e.pointerId)return;
-  const last=active;active=null;last.element.remove();
-  if(!commit)return;
-  const rect={x:Math.min(last.from.x,last.to.x),y:Math.min(last.from.y,last.to.y),w:Math.abs(last.to.x-last.from.x),h:Math.abs(last.to.y-last.from.y)};
-  if(rect.w*viewport.width<5||rect.h*viewport.height<4)return;
-  (highlights[number]??=[]).push(rect);
-  saveHighlights();addRect(rect);
+ function finish(e,save){
+  if(!active||e.pointerId!==active.id)return;
+  const done=active;active=null;
+  done.element.remove();
+  if(!save)return;
+  // Also allow a single click to make a round dot.
+  (highlights[number]??=[]).push(done.record);
+  saveHighlights();draw(done.record);
  }
- overlay.addEventListener('pointerup',e=>finish(e,true));
- overlay.addEventListener('pointercancel',e=>finish(e,false));
- overlay.addEventListener('lostpointercapture',e=>finish(e,false));
+ svg.addEventListener('pointerup',e=>finish(e,true));
+ svg.addEventListener('pointercancel',e=>finish(e,false));
+ svg.addEventListener('lostpointercapture',e=>finish(e,false));
 }
 
 function normalize(s){return String(s||'').toLowerCase().replace(/[\s\u00ad·•:()（）\-–—_]+/g,'')}
