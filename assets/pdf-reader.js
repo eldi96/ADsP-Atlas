@@ -13,7 +13,7 @@ const shell=document.createElement('div');shell.className='pdf-shell';
 shell.innerHTML='<div class="pdf-toolbar"><strong id="pdfConcept">PDF 개념서</strong><button id="pdfPrev" title="이전 페이지">←</button><span id="pdfCount">—</span><button id="pdfNext" title="다음 페이지">→</button><button id="pdfSmaller" title="축소">−</button><button id="pdfLarger" title="확대">＋</button><button id="pdfHighlight" type="button" aria-pressed="false" title="연필처럼 자유롭게 그리는 형광펜">형광펜</button><label class="pdf-pen-control" for="pdfPenSize">굵기 <select id="pdfPenSize" aria-label="형광펜 굵기"><option value="10">얇게</option><option value="18" selected>보통</option><option value="30">굵게</option></select></label><button id="pdfEraser" type="button" aria-pressed="false" title="표시를 클릭해 삭제">지우개</button><button id="pdfClear" type="button" title="현재 페이지의 형광펜 모두 삭제">이 페이지 지우기</button><a id="pdfOpen" href="'+PDF_URL+'" target="_blank" rel="noopener">원본 PDF ↗</a></div><div class="pdf-status" id="pdfStatus" role="status">PDF 준비 중…</div><div class="pdf-pages" id="pdfPages"></div>';
 detail.append(shell);
 const pages=$('pdfPages'),status=$('pdfStatus'),count=$('pdfCount');
-let pdf=null,pdfjs=null,scale=1,selected=1,token=0,concept='',cache=new Map(),loaded=false,conceptIndex=[],activeMark=null;
+let pdf=null,pdfjs=null,scale=1,selected=1,token=0,concept='',cache=new Map(),loaded=false,conceptIndex=[],activeMark=null,pendingPdfLocation=null;
 const HIGHLIGHT_KEY='adsp-atlas-pdf-highlights-v1';
 let highlightMode='view',highlights={};
 try{const saved=JSON.parse(localStorage.getItem(HIGHLIGHT_KEY)||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))highlights=saved;}catch(e){console.warn('PDF marks could not be loaded',e)}
@@ -213,7 +213,7 @@ async function locate(title){
   await renderPage(selected);
  }
 }
-async function boot(){try{const idxResponse=await fetch('assets/pdf-index.json');if(idxResponse.ok){const data=await idxResponse.json();if(data.pdf==='ADsP.pdf'&&data.concepts?.length===241)conceptIndex=data.concepts;}const mod=await import(LIB);pdfjs=mod;pdfjs.GlobalWorkerOptions.workerSrc=WORKER;pdf=await pdfjs.getDocument(PDF_URL).promise;loaded=true;info('PDF '+pdf.numPages+'페이지를 불러왔습니다. 왼쪽 카드를 선택하세요.');await renderPage(1);if(concept)await locate(concept)}
+async function boot(){try{const idxResponse=await fetch('assets/pdf-index.json');if(idxResponse.ok){const data=await idxResponse.json();if(data.pdf==='ADsP.pdf'&&data.concepts?.length===241)conceptIndex=data.concepts;}const mod=await import(LIB);pdfjs=mod;pdfjs.GlobalWorkerOptions.workerSrc=WORKER;pdf=await pdfjs.getDocument(PDF_URL).promise;loaded=true;info('PDF '+pdf.numPages+'페이지를 불러왔습니다. 왼쪽 카드를 선택하세요.');await renderPage(1);if(pendingPdfLocation){const t=pendingPdfLocation;pendingPdfLocation=null;concept=t.title;$('pdfConcept').textContent=concept;info('‘'+concept+'’ · '+t.page+'페이지 (PDF 목차 검색)');await renderPage(t.page,{y:t.y})}else if(concept)await locate(concept)}
 catch(e){info('PDF를 열 수 없습니다.');pages.replaceChildren();const warning=document.createElement('div');warning.className='pdf-empty';warning.textContent='자동 위치 이동을 불러오지 못했습니다: '+String(e.message||e);pages.append(warning);const fallback=document.createElement('iframe');fallback.className='pdf-native-fallback';fallback.title='PDF 기본 뷰어';fallback.src=PDF_URL+'#page=1';pages.append(fallback);}}
 $('pdfHighlight').onclick=()=>setHighlightMode('mark');
 $('pdfEraser').onclick=()=>setHighlightMode('erase');
@@ -230,5 +230,14 @@ $('pdfLarger').onclick=()=>{scale=Math.min(2.5,scale+.15);renderPage(selected,ac
 let resizeTimer;new ResizeObserver(()=>{if(!loaded)return;clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>renderPage(selected,activeMark),130)}).observe(pages);
 concept=document.querySelector('#detailHeader .detail-title')?.textContent?.trim()||'ADsP';
 window.addEventListener('atlas:concept',e=>{concept=e.detail?.title||'';$('pdfConcept').textContent=concept||'PDF 개념서';if(loaded)locate(concept)});
+window.addEventListener('atlas:pdf-location',async e=>{
+ const target=e.detail;
+ if(!target||!Number.isInteger(target.page)||!Number.isFinite(target.y))return;
+ const pageNumber=Math.max(1,Math.min(98,target.page));
+ concept=target.title||'PDF 개념서';$('pdfConcept').textContent=concept;
+ if(!loaded){pendingPdfLocation={page:pageNumber,y:target.y,title:concept};return;}
+ info('‘'+concept+'’ · '+pageNumber+'페이지 (PDF 목차 검색)');
+ await renderPage(pageNumber,{y:target.y});
+});
 boot();
 })();
