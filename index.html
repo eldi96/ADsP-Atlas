@@ -864,6 +864,24 @@ function openSearch(mode='navigate'){
  bar.append(mag,inp);d.body.append(bar);
  const results=document.createElement('div');results.className='search-results';d.body.append(results);d.actions.style.display='none';
  let pdfConcepts=[],pdfIndexState=mode==='link'?'not-needed':'loading';
+ const PDF_SEARCH_KEYWORDS={
+  '04-05':'귀무가설 대립가설 영가설 H0 H1 가설 검정 hypothesis null alternative',
+  '04-06':'pvalue p-value p value p값 유의확률 유의 수준 significance alpha 알파 1종오류 2종오류',
+  '04-08':'t-test t검정 t통계량 학생t검정 독립표본 대응표본 단일표본',
+  '03-08':'결측 결측값 missing value missing data NA NULL NaN',
+  '03-09':'결측값대체 결측치대체 결측값처리 평균대체 중앙값대체 단순대치 다중대치 완전사례분석 imputation',
+  '03-03':'벡터 matrix 행렬 array 배열',
+  '05-11':'support vector machine SVM 서포트벡터머신',
+  '05-27':'kmeans k-means k평균 군집',
+  '06-03':'precision 정밀도 양성예측도',
+  '06-04':'recall 재현율 민감도 sensitivity',
+  '06-02':'accuracy 정확도 오분류율 error rate'
+ };
+ const normSearch=t=>String(t||'').toLocaleLowerCase().replace(/[\\s·•()（）_\\-–—.]+/g,'');
+ function matchesPdfConcept(c,q){
+  const key=normSearch(q);
+  return normSearch(c.title).includes(key)||normSearch(c.code).includes(key)||normSearch(PDF_SEARCH_KEYWORDS[c.code]||'').includes(key);
+ }
  function addResult(title,description,iconText,action){
   const bt=document.createElement('button');bt.type='button';bt.className='search-item';
   const ico=document.createElement('div');ico.className='sicon';ico.textContent=iconText;
@@ -881,19 +899,18 @@ function openSearch(mode='navigate'){
    }else navigate(item.id);
   }));
   if(mode!=='link'&&q){
-   const normalizedQuery=q.replace(/[\s·•()（）_-]/g,'');
-   const pdfMatches=pdfConcepts.filter(c=>c.title.toLocaleLowerCase().includes(q)||c.code.toLowerCase().includes(q)||c.title.toLocaleLowerCase().replace(/[\s·•()（）_-]/g,'').includes(normalizedQuery)).slice(0,35);
+    const pdfMatches=pdfConcepts.filter(c=>matchesPdfConcept(c,q)).slice(0,35);
    pdfMatches.forEach(item=>addResult(item.title,`PDF 개념서 · ${item.page}페이지 · ${item.code}`,'PDF',()=>window.dispatchEvent(new CustomEvent('atlas:pdf-location',{detail:{title:item.title,page:item.page,y:item.y}}))));
   }
   if(!results.childElementCount){
    const empty=document.createElement('div');empty.className='empty-search';
-   empty.textContent=pdfIndexState==='loading'&&mode!=='link'?'PDF 목차를 불러오는 중…':'검색 결과가 없습니다.';
+   empty.textContent=pdfIndexState==='loading'&&mode!=='link'?'PDF 목차를 불러오는 중…':pdfIndexState==='error'&&mode!=='link'?'PDF 목차를 불러오지 못했습니다. 새로고침 후 다시 시도하세요.':'검색 결과가 없습니다.';
    results.append(empty);
   }
  }
  inp.addEventListener('input',update);update();setTimeout(()=>inp.focus(),35);
  if(mode!=='link'){
-  fetch('assets/pdf-index.json').then(response=>{if(!response.ok)throw new Error('PDF 목차 요청 실패');return response.json()}).then(data=>{
+  fetch('assets/pdf-index.json?v=20261023-search9').then(response=>{if(!response.ok)throw new Error('PDF 목차 요청 실패');return response.json()}).then(data=>{
    pdfConcepts=Array.isArray(data.concepts)?data.concepts.filter(x=>typeof x.title==='string'&&Number.isFinite(x.page)&&Number.isFinite(x.y)):[];
    pdfIndexState='loaded';update();
   }).catch(err=>{pdfIndexState='error';console.warn('PDF 목차 검색 불가',err);update()});
